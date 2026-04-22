@@ -1,8 +1,18 @@
 import {
   ApplicationConfig,
   provideBrowserGlobalErrorListeners,
-} from "@angular/core";
+  provideZonelessChangeDetection,
+} from '@angular/core';
+import { provideGrapesJs } from 'grapesjs-angular';
+import gjsBlocksBasic from 'grapesjs-blocks-basic';
 
 export const appConfig: ApplicationConfig = {
-  providers: [provideBrowserGlobalErrorListeners()],
+  providers: [
+    provideBrowserGlobalErrorListeners(),
+    provideZonelessChangeDetection(),
+    provideGrapesJs({
+      plugins: [gjsBlocksBasic],
+      storageManager: false,
+    }),
+  ],
 };
