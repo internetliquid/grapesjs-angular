@@ -5,7 +5,8 @@
     "ng": "ng",
     "build:lib": "ng build grapesjs-angular",
     "build:demo": "ng build demo",
-    "test:lib": "ng test grapesjs-angular",
+    "test:lib": "vitest run",
+    "test:lib:watch": "vitest",
     "test:demo": "ng test demo",
     "start:demo": "ng serve demo",
     "lint": "ng lint"
@@ -23,6 +24,8 @@
     "tslib": "^2.3.0"
   },
   "devDependencies": {
+    "@analogjs/vite-plugin-angular": "^3.0.0-alpha.45",
+    "@analogjs/vitest-angular": "^3.0.0-alpha.45",
     "@angular/build": "^21.2.8",
     "@angular/cli": "^21.2.8",
     "@angular/compiler-cli": "^21.2.0",
@@ -32,6 +35,7 @@
     "ng-packagr": "^21.2.0",
     "prettier": "^3.8.1",
     "typescript": "~5.9.2",
-    "vitest": "^4.0.8"
+    "vitest": "^4.0.8",
+    "zone.js": "^0.16.1"
   }
 }
