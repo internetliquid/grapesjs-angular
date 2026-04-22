@@ -1,0 +1,37 @@
+{
+  "name": "grapesjs-angular",
+  "version": "0.0.0",
+  "scripts": {
+    "ng": "ng",
+    "build:lib": "ng build grapesjs-angular",
+    "build:demo": "ng build demo",
+    "test:lib": "ng test grapesjs-angular",
+    "test:demo": "ng test demo",
+    "start:demo": "ng serve demo",
+    "lint": "ng lint"
+  },
+  "private": true,
+  "packageManager": "npm@10.9.2",
+  "dependencies": {
+    "@angular/common": "^21.2.0",
+    "@angular/compiler": "^21.2.0",
+    "@angular/core": "^21.2.0",
+    "@angular/forms": "^21.2.0",
+    "@angular/platform-browser": "^21.2.0",
+    "@angular/router": "^21.2.0",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.3.0"
+  },
+  "devDependencies": {
+    "@angular/build": "^21.2.8",
+    "@angular/cli": "^21.2.8",
+    "@angular/compiler-cli": "^21.2.0",
+    "grapesjs": "^0.22.15",
+    "grapesjs-blocks-basic": "^1.0.2",
+    "jsdom": "^28.0.0",
+    "ng-packagr": "^21.2.0",
+    "prettier": "^3.8.1",
+    "typescript": "~5.9.2",
+    "vitest": "^4.0.8"
+  }
+}

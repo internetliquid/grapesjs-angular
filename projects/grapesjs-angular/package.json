@@ -1,0 +1,25 @@
+{
+  "name": "@ilq/grapesjs-angular",
+  "version": "2.0.0-alpha.1",
+  "description": "Angular 20+ wrapper for the GrapesJS web builder framework. Signals-based, standalone, zoneless-compatible.",
+  "keywords": ["grapesjs", "angular", "page-builder", "wysiwyg", "drag-and-drop", "site-builder"],
+  "author": "Internet Liquid LLC",
+  "contributors": ["goodlime"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/internetliquid/grapesjs-angular"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@angular/core": ">=20.0.0",
+    "@angular/common": ">=20.0.0",
+    "grapesjs": ">=0.22.0"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0"
+  },
+  "sideEffects": false
+}
