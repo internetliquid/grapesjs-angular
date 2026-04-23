@@ -18,4 +18,17 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm run build:lib
-      - run: npm publish ./dist/grapesjs-angular --access public --provenance
+      - name: Determine npm dist-tag
+        id: dist-tag
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          if [[ "$VERSION" == *-alpha* ]]; then
+            echo "tag=alpha" >> "$GITHUB_OUTPUT"
+          elif [[ "$VERSION" == *-beta* ]]; then
+            echo "tag=beta" >> "$GITHUB_OUTPUT"
+          elif [[ "$VERSION" == *-rc* ]]; then
+            echo "tag=next" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=latest" >> "$GITHUB_OUTPUT"
+          fi
+      - run: npm publish ./dist/grapesjs-angular --access public --provenance --tag ${{ steps.dist-tag.outputs.tag }}
