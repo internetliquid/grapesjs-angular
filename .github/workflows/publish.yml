@@ -15,6 +15,6 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm run build:lib
-      - run: npm publish dist/grapesjs-angular --access public
+      - run: npm publish ./dist/grapesjs-angular --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
