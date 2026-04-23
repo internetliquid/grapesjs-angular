@@ -168,7 +168,7 @@ Each instance of this component gets its own `GrapesJsEditorService`.
 
 ## Acknowledgements
 
-Inspired by the original [`@rakutentech/grapesjs-angular`](https://github.com/AlessioRoccolWormo/grapesjs-angular), now archived.
+Inspired by the original [`@rakutentech/grapesjs-angular`](https://github.com/rakutentech/grapesjs-angular), now archived.
 
 ## Contributing
 
