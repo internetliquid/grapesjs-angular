@@ -1,6 +1,6 @@
 {
   "name": "@ilq/grapesjs-angular",
-  "version": "2.0.0-alpha.2",
+  "version": "2.0.0-beta.1",
   "description": "Angular 20+ wrapper for the GrapesJS web builder framework. Signals-based, standalone, zoneless-compatible.",
   "keywords": ["grapesjs", "angular", "page-builder", "wysiwyg", "drag-and-drop", "site-builder"],
   "author": "Internet Liquid LLC",
