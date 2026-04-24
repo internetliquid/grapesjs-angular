@@ -8,6 +8,8 @@
 
 An Angular wrapper for the [GrapesJS](https://grapesjs.com/) web builder framework. Embed a fully functional drag-and-drop page editor in your Angular app with all GrapesJS managers accessible as Angular signals.
 
+**[Live Demo →](https://internetliquid.github.io/grapesjs-angular/)**
+
 ## Angular Version Support
 
 | Angular | Supported |
