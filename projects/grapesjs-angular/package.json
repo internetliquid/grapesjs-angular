@@ -10,6 +10,10 @@
     "type": "git",
     "url": "git+https://github.com/internetliquid/grapesjs-angular.git"
   },
+  "homepage": "https://internetliquid.github.io/grapesjs-angular/",
+  "bugs": {
+    "url": "https://github.com/internetliquid/grapesjs-angular/issues"
+  },
   "publishConfig": {
     "access": "public"
   },
