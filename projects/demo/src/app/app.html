@@ -89,7 +89,8 @@
                           [class.is-source]="dragging() && draggedLabel() === block.getLabel()"
                           (mousedown)="startBlockDrag(block, $event, ctx.dragStart)"
                           (mouseup)="ctx.dragStop()">
-                          {{ block.getLabel() }}
+                          <span class="block-ico" [innerHTML]="blockIcon(block)"></span>
+                          <span class="block-label">{{ block.getLabel() }}</span>
                         </button>
                       }
                     </div>

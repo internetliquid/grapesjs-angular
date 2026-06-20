@@ -1,5 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { DOCUMENT, KeyValuePipe, NgTemplateOutlet } from '@angular/common';
+import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
 import {
   GrapesJsEditorComponent,
   GrapesJsEditorService,
@@ -43,6 +44,10 @@ import { SAMPLE_HTML, SAMPLE_CSS } from './sample-content';
 export class App {
   private editorService = inject(GrapesJsEditorService);
   private doc = inject(DOCUMENT);
+  private sanitizer = inject(DomSanitizer);
+  /** Memoized block icons — the media SVG is trusted (GrapesJS-authored) and
+   *  block-stable, so sanitize once per block id rather than every render. */
+  private blockIconCache = new Map<string, SafeHtml>();
   /** The component currently selected on the canvas (null = nothing selected).
    *  Drives the inspector's empty state. */
   protected selectedComponent = this.editorService.selectedComponent;
@@ -166,6 +171,17 @@ export class App {
    *  Selectors / Styles / Traits panels. */
   selectLayer(c: GjsComponent): void {
     this.editorService.editor()?.select(c);
+  }
+
+  /** The block's icon (its GrapesJS `media` SVG), for the block tiles. */
+  blockIcon(block: Block): SafeHtml {
+    const id = block.getId();
+    let icon = this.blockIconCache.get(id);
+    if (!icon) {
+      icon = this.sanitizer.bypassSecurityTrustHtml(String(block.get('media') ?? ''));
+      this.blockIconCache.set(id, icon);
+    }
+    return icon;
   }
 
   isNode(value: unknown): value is Node {
