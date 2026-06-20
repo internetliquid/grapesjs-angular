@@ -54,6 +54,10 @@ export class App {
   private frameEl: HTMLIFrameElement | null = null;
   private frameDoc: Document | null = null;
 
+  /** Holds the project across a Custom <-> Default UI switch (each switch
+   *  recreates the editor). null = first load, so seed the sample content. */
+  private savedProject: ProjectData | null = null;
+
   private trackCursor = (e: MouseEvent) => {
     this.cursorX.set(e.clientX);
     this.cursorY.set(e.clientY);
@@ -69,19 +73,28 @@ export class App {
   };
 
   onEditorReady(editor: Editor): void {
-    editor.setComponents(SAMPLE_HTML);
-    editor.setStyle(SAMPLE_CSS);
+    // Restore the in-progress project when switching Custom <-> Default UI;
+    // only seed the sample on first load (savedProject === null).
+    if (this.savedProject) {
+      editor.loadProjectData(this.savedProject);
+    } else {
+      editor.setComponents(SAMPLE_HTML);
+      editor.setStyle(SAMPLE_CSS);
+    }
 
     // Capture once for cross-frame mousemove tracking during drags.
     this.frameEl = editor.Canvas.getFrameEl() ?? null;
 
     editor.on('block:drag:start', () => this.dragging.set(true));
-    editor.on('block:drag:stop', () => {
+    editor.on('block:drag:stop', (component?: GjsComponent) => {
       this.dragging.set(false);
       this.draggedLabel.set(null);
       document.removeEventListener('mousemove', this.trackCursor);
       this.frameDoc?.removeEventListener('mousemove', this.trackCursorInFrame);
       this.frameDoc = null;
+      // Auto-select the dropped element so its styles/traits populate without
+      // a second click. `component` is undefined when the drop was cancelled.
+      if (component) editor.select(component);
     });
   }
 
@@ -124,6 +137,10 @@ export class App {
   }
 
   setCustomUi(custom: boolean): void {
+    if (custom === this.customUi()) return;
+    // Snapshot the project before the switch tears down this editor instance,
+    // so the next one restores it (see onEditorReady) instead of re-seeding.
+    this.savedProject = this.editorService.getProjectData();
     this.customUi.set(custom);
   }
 
@@ -183,6 +200,7 @@ export class App {
   reset(): void {
     const editor = this.editorService.editor();
     if (!editor) return;
+    this.savedProject = null;
     editor.setComponents(SAMPLE_HTML);
     editor.setStyle(SAMPLE_CSS);
     this.htmlOutput.set('');
