@@ -1,0 +1,822 @@
+<!doctype html>
+<html lang="en" data-theme="light" data-mode="custom">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GrapesJS Angular — Editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;510;560;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   DESIGN TOKENS — one system drives the toolbar, both rails,
+   and (in a real build) the GrapesJS default-mode panels too.
+   ============================================================ */
+:root {
+  --app-bg:    oklch(95.5% 0.005 250);
+  --panel:     oklch(99.2% 0.002 250);
+  --panel-2:   oklch(97% 0.004 250);
+  --panel-3:   oklch(94.2% 0.006 250);
+  --fg:        oklch(26% 0.02 255);
+  --fg-2:      oklch(47% 0.016 255);
+  --fg-3:      oklch(60% 0.012 255);
+  --border:    oklch(89% 0.007 255);
+  --border-2:  oklch(83% 0.009 255);
+  --accent:        oklch(52% 0.17 300);   /* GrapesJS grape — primary signal, fill */
+  --accent-strong: oklch(47% 0.16 300);   /* accent text/icons on light surfaces */
+  --accent-ink:    oklch(99% 0.01 300);   /* text on accent fill */
+  --accent-wash:   color-mix(in oklab, var(--accent) 14%, transparent);
+  --select:    oklch(60% 0.17 250);       /* canvas selection — distinct from accent */
+  --select-wash: color-mix(in oklab, var(--select) 12%, transparent);
+  --success:   oklch(58% 0.13 155);
+  --warn:      oklch(66% 0.15 52);
+  --danger:    oklch(57% 0.19 25);
+  --doc:       #ffffff;
+  --shadow-pop: 0 12px 32px oklch(20% 0.03 255 / 0.18), 0 2px 6px oklch(20% 0.03 255 / 0.12);
+
+  --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  --r1: 6px; --r2: 8px; --r3: 10px; --r4: 14px;
+}
+html[data-theme="dark"] {
+  --app-bg:    oklch(16.5% 0.012 260);
+  --panel:     oklch(21.5% 0.013 260);
+  --panel-2:   oklch(25.5% 0.013 260);
+  --panel-3:   oklch(30% 0.015 260);
+  --fg:        oklch(93% 0.01 250);
+  --fg-2:      oklch(71% 0.014 250);
+  --fg-3:      oklch(56% 0.014 250);
+  --border:    oklch(30% 0.014 260);
+  --border-2:  oklch(38% 0.016 260);
+  --accent:        oklch(72% 0.16 300);
+  --accent-strong: oklch(78% 0.15 300);
+  --accent-ink:    oklch(22% 0.05 300);
+  --accent-wash:   color-mix(in oklab, var(--accent) 18%, transparent);
+  --select:    oklch(70% 0.15 250);
+  --select-wash: color-mix(in oklab, var(--select) 18%, transparent);
+  --success:   oklch(72% 0.14 155);
+  --warn:      oklch(76% 0.15 62);
+  --danger:    oklch(68% 0.17 25);
+  --shadow-pop: 0 16px 40px oklch(0% 0 0 / 0.5), 0 2px 8px oklch(0% 0 0 / 0.4);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--fg);
+  background: var(--app-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+}
+svg { display: block; }
+.ico { width: 16px; height: 16px; stroke: currentColor; stroke-width: 1.6; fill: none; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.ico-sm { width: 14px; height: 14px; }
+button { font-family: inherit; color: inherit; }
+::selection { background: var(--accent-wash); }
+.app ::-webkit-scrollbar { width: 10px; height: 10px; }
+.app ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 999px; border: 3px solid transparent; background-clip: padding-box; }
+.app ::-webkit-scrollbar-thumb:hover { background: var(--fg-3); background-clip: padding-box; border: 3px solid transparent; }
+
+/* ============================================================ LAYOUT */
+.app { height: 100vh; display: grid; grid-template-rows: 53px 1fr; }
+.work { display: grid; grid-template-columns: 264px minmax(0,1fr) 300px; min-height: 0; }
+
+/* ============================================================ TOOLBAR */
+.toolbar {
+  display: flex; align-items: center; gap: 6px;
+  padding: 0 14px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+.brand { display: flex; align-items: center; gap: 9px; padding-right: 14px; }
+.brand .name { font-weight: 600; font-size: 13px; letter-spacing: -0.01em; }
+.brand .name b { font-weight: 600; }
+.brand .name span { color: var(--fg-3); font-weight: 450; }
+.brand .ver { font-family: var(--font-mono); font-size: 10px; color: var(--fg-3); background: var(--panel-2); border: 1px solid var(--border); padding: 1px 6px; border-radius: 999px; letter-spacing: 0.02em; }
+
+.tb-sep { width: 1px; height: 24px; background: var(--border); margin: 0 6px; }
+.tb-spacer { flex: 1; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 32px; padding: 0 12px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  font-size: 12.5px; font-weight: 510; letter-spacing: 0.01em;
+  cursor: pointer; white-space: nowrap;
+  transition: background .14s ease, border-color .14s ease, transform .04s ease;
+}
+.btn:hover { background: var(--panel-3); border-color: var(--border-2); }
+.btn:active { transform: translateY(1px); }
+.btn .ico { color: var(--fg-2); }
+.btn-primary {
+  background: var(--accent); color: var(--accent-ink);
+  border-color: transparent;
+  box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.25);
+}
+.btn-primary .ico { color: var(--accent-ink); }
+.btn-primary:hover { background: color-mix(in oklab, var(--accent) 88%, black); }
+.btn-ghost { background: transparent; border-color: transparent; }
+.btn-ghost:hover { background: var(--panel-2); }
+
+.icobtn {
+  width: 32px; height: 32px; display: grid; place-items: center;
+  background: transparent; border: 1px solid transparent; border-radius: var(--r2);
+  color: var(--fg-2); cursor: pointer;
+  transition: background .14s ease, color .14s ease;
+}
+.icobtn:hover { background: var(--panel-2); color: var(--fg); }
+.icobtn:disabled { opacity: .4; cursor: default; }
+
+/* segmented control */
+.seg { display: inline-flex; background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--r2); padding: 2px; gap: 2px; }
+.seg button {
+  height: 26px; min-width: 32px; padding: 0 9px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  background: transparent; border: 0; border-radius: 6px;
+  color: var(--fg-2); cursor: pointer; font-size: 12px; font-weight: 510;
+  transition: background .14s ease, color .14s ease, box-shadow .14s ease;
+}
+.seg button .ico { color: currentColor; }
+.seg button.on { background: var(--panel); color: var(--fg); box-shadow: 0 1px 2px oklch(0% 0 0 / 0.08); }
+html[data-theme="dark"] .seg button.on { background: var(--panel-3); }
+
+/* ============================================================ RAILS / PANELS */
+.rail { background: var(--panel); overflow-y: auto; display: flex; flex-direction: column; }
+.rail.left { border-right: 1px solid var(--border); }
+.rail.right { border-left: 1px solid var(--border); }
+
+.panel { border-bottom: 1px solid var(--border); }
+.panel-hd {
+  display: flex; align-items: center; gap: 8px;
+  padding: 11px 14px 9px;
+}
+.panel-hd .ph-ico { color: var(--fg-3); }
+.panel-hd h3 {
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.085em;
+  color: var(--fg-2); flex: 1;
+}
+.panel-hd .count { font-family: var(--font-mono); font-size: 10px; color: var(--fg-3); }
+.panel-hd .add { width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; background: transparent; border: 1px solid var(--border); color: var(--fg-2); cursor: pointer; }
+.panel-hd .add:hover { background: var(--panel-2); color: var(--fg); }
+.panel-bd { padding: 2px 10px 13px; }
+
+/* pages */
+.pg { display: flex; align-items: center; gap: 9px; padding: 7px 9px; border-radius: var(--r2); cursor: pointer; color: var(--fg-2); font-weight: 500; position: relative; }
+.pg:hover { background: var(--panel-2); color: var(--fg); }
+.pg.on { background: var(--panel-2); color: var(--fg); }
+.pg.on::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 2.5px; border-radius: 2px; background: var(--accent); }
+.pg .ico { color: var(--fg-3); }
+.pg.on .ico { color: var(--accent-strong); }
+.pg .meta { margin-left: auto; font-family: var(--font-mono); font-size: 10px; color: var(--fg-3); }
+
+/* blocks */
+.muted { color: var(--fg-3); font-size: 11.5px; padding: 0 4px 9px; line-height: 1.45; }
+.bcat { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--fg-3); padding: 9px 4px 6px; }
+.blocks { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.block {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px;
+  height: 60px; border-radius: var(--r2);
+  background: var(--panel-2); border: 1px solid var(--border);
+  color: var(--fg-2); cursor: grab; user-select: none;
+  font-size: 11px; font-weight: 500;
+  transition: transform .08s ease, box-shadow .12s ease, border-color .12s ease, background .12s ease;
+}
+.block:hover { border-color: var(--border-2); background: var(--panel-3); transform: translateY(-1px); box-shadow: 0 4px 10px oklch(0% 0 0 / 0.06); }
+.block .ico { color: var(--fg-3); }
+.block.drag-src { opacity: .35; }
+
+/* layers */
+.layers { font-size: 12.5px; }
+.layer-row {
+  display: flex; align-items: center; gap: 7px; width: 100%;
+  padding: 5px 8px; border-radius: var(--r1);
+  background: transparent; border: 0; cursor: pointer; color: var(--fg-2); text-align: left;
+}
+.layer-row:hover { background: var(--panel-2); color: var(--fg); }
+.layer-row.on { background: var(--select-wash); color: var(--fg); }
+.layer-row .tw { width: 14px; display: grid; place-items: center; color: var(--fg-3); }
+.layer-row .tw .ico { width: 12px; height: 12px; }
+.layer-row .lname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.layer-row .ltag { font-family: var(--font-mono); font-size: 10px; color: var(--fg-3); }
+.layer-row .eye { color: var(--fg-3); opacity: 0; }
+.layer-row:hover .eye { opacity: 1; }
+.layer-kids { margin-left: 11px; border-left: 1px solid var(--border); padding-left: 4px; }
+
+/* ============================================================ CANVAS */
+.canvas-area { position: relative; overflow: auto; background: var(--app-bg); }
+.canvas-area::before {
+  content: ""; position: absolute; inset: 0;
+  background-image: radial-gradient(var(--border-2) 1px, transparent 1px);
+  background-size: 22px 22px; opacity: .5; pointer-events: none;
+}
+.canvas-scroll { min-height: 100%; display: flex; flex-direction: column; align-items: center; padding: 26px 26px 64px; }
+.frame {
+  width: 100%; max-width: 1080px; background: var(--doc);
+  border-radius: var(--r3); overflow: hidden;
+  box-shadow: var(--shadow-pop);
+  transition: max-width .35s cubic-bezier(.4,0,.2,1);
+  position: relative;
+}
+.frame-bar { height: 30px; display: flex; align-items: center; gap: 6px; padding: 0 12px; background: var(--panel); border-bottom: 1px solid var(--border); }
+.frame-bar .dot { width: 9px; height: 9px; border-radius: 999px; background: var(--border-2); }
+.frame-bar .url { margin-left: 8px; font-family: var(--font-mono); font-size: 10px; color: var(--fg-3); }
+.frame-bar .sz { margin-left: auto; font-family: var(--font-mono); font-size: 10px; color: var(--fg-3); }
+
+/* selection chrome on the canvas */
+.doc [data-sel] { position: relative; cursor: default; outline: 1.5px solid transparent; outline-offset: -1.5px; transition: outline-color .12s ease; }
+.doc [data-sel]:hover { outline-color: var(--select-wash); }
+.doc [data-sel].sel { outline: 1.5px solid var(--select); outline-offset: -1.5px; }
+.doc [data-sel].sel::after {
+  content: attr(data-tag); position: absolute; top: 0; left: 0;
+  transform: translateY(-100%);
+  background: var(--select); color: #fff;
+  font-family: var(--font-mono); font-size: 10px; line-height: 1; letter-spacing: .02em;
+  padding: 3px 6px; border-radius: 4px 4px 4px 0; white-space: nowrap; z-index: 5;
+  pointer-events: none;
+}
+
+/* drop hint while dragging a block */
+.canvas-area.dropping .frame { outline: 2px dashed var(--accent); outline-offset: 4px; }
+.canvas-area.dropping::after {
+  content: "Drop to add block"; position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+  background: var(--accent); color: var(--accent-ink); font-size: 11px; font-weight: 560; letter-spacing: .03em;
+  padding: 5px 12px; border-radius: 999px; z-index: 30; box-shadow: var(--shadow-pop);
+}
+
+/* status / breadcrumb */
+.statusbar {
+  position: sticky; bottom: 0; z-index: 20;
+  grid-column: 1 / -1;
+  display: flex; align-items: center; gap: 8px;
+  height: 30px; padding: 0 14px;
+  background: var(--panel); border-top: 1px solid var(--border);
+  font-family: var(--font-mono); font-size: 11px; color: var(--fg-3);
+}
+.crumbs { display: flex; align-items: center; gap: 6px; overflow: hidden; }
+.crumbs .cb { color: var(--fg-2); }
+.crumbs .cb.sel { color: var(--accent-strong); }
+.crumbs .sepc { color: var(--fg-3); }
+.statusbar .right { margin-left: auto; display: flex; gap: 14px; }
+.statusbar kbd { font-family: var(--font-mono); background: var(--panel-2); border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; color: var(--fg-2); font-size: 10px; }
+
+/* ============================================================ RIGHT RAIL INSPECTOR */
+.targets { font-family: var(--font-mono); font-size: 11px; color: var(--fg-2); background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--r2); padding: 7px 9px; margin-bottom: 9px; word-break: break-all; }
+.targets .none { color: var(--fg-3); }
+
+.chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 9px; }
+.chip { display: inline-flex; align-items: center; gap: 5px; background: var(--accent-wash); color: var(--accent-strong); border: 1px solid color-mix(in oklab, var(--accent) 35%, transparent); border-radius: 999px; padding: 3px 5px 3px 9px; font-family: var(--font-mono); font-size: 11px; }
+.chip button { background: transparent; border: 0; color: inherit; cursor: pointer; display: grid; place-items: center; opacity: .7; }
+.chip button:hover { opacity: 1; }
+.chip-add { background: var(--panel-2); color: var(--fg-3); border: 1px dashed var(--border-2); cursor: pointer; }
+
+.field { margin-bottom: 11px; }
+.field > label { display: block; font-size: 10.5px; font-weight: 560; text-transform: uppercase; letter-spacing: .07em; color: var(--fg-3); margin-bottom: 6px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+.ctl { width: 100%; height: 30px; background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--r2); color: var(--fg); padding: 0 9px; font-size: 12.5px; font-family: var(--font-ui); }
+.ctl:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-wash); }
+select.ctl { -webkit-appearance: none; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 9px center; padding-right: 26px; }
+
+.swatch { display: flex; align-items: center; gap: 8px; background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--r2); padding: 4px 9px 4px 5px; height: 30px; }
+.swatch input[type=color] { width: 22px; height: 22px; padding: 0; border: 1px solid var(--border-2); border-radius: 5px; background: none; cursor: pointer; }
+.swatch input[type=color]::-webkit-color-swatch-wrapper { padding: 0; }
+.swatch input[type=color]::-webkit-color-swatch { border: 0; border-radius: 4px; }
+.swatch .val { font-family: var(--font-mono); font-size: 11.5px; color: var(--fg-2); text-transform: uppercase; }
+
+.range { display: flex; align-items: center; gap: 10px; }
+.range input[type=range] { -webkit-appearance: none; appearance: none; flex: 1; height: 4px; border-radius: 999px; background: var(--border-2); }
+.range input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 15px; height: 15px; border-radius: 999px; background: var(--accent); border: 2px solid var(--panel); box-shadow: 0 1px 3px oklch(0% 0 0 / .25); cursor: pointer; }
+.range .num { font-family: var(--font-mono); font-size: 11.5px; color: var(--fg-2); min-width: 46px; text-align: right; }
+
+.sector { border-top: 1px solid var(--border); }
+.sector:first-child { border-top: 0; }
+.sector > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 7px; padding: 10px 0 9px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--fg-2); }
+.sector > summary::-webkit-details-marker { display: none; }
+.sector > summary .chev { transition: transform .15s ease; color: var(--fg-3); margin-left: auto; }
+.sector[open] > summary .chev { transform: rotate(90deg); }
+.sector .sbody { padding-bottom: 6px; }
+
+/* stock-style read-only list (Default mode) */
+.proplist { font-family: var(--font-mono); font-size: 11.5px; }
+.proplist .pl { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; border-bottom: 1px dotted var(--border); }
+.proplist .pl:last-child { border-bottom: 0; }
+.proplist .pk { color: var(--fg-2); }
+.proplist .pv { color: var(--accent-strong); }
+.mode-note { font-size: 11px; color: var(--fg-3); line-height: 1.5; padding: 2px 2px 10px; }
+
+.empty { color: var(--fg-3); font-size: 12px; padding: 8px 2px; line-height: 1.5; }
+
+/* ============================================================ EXPORT DOCK */
+.dock { position: fixed; left: 264px; right: 300px; bottom: 0; z-index: 60; transform: translateY(101%); transition: transform .3s cubic-bezier(.4,0,.2,1); }
+.dock.open { transform: translateY(0); }
+.dock-inner { background: var(--panel); border-top: 1px solid var(--border-2); box-shadow: 0 -16px 40px oklch(0% 0 0 / .14); }
+.dock-hd { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.dock-hd .ico { color: var(--accent-strong); }
+.dock-hd h4 { font-size: 12px; font-weight: 600; letter-spacing: .01em; }
+.dock-hd .lang { font-family: var(--font-mono); font-size: 10px; color: var(--fg-3); background: var(--panel-2); border: 1px solid var(--border); padding: 1px 7px; border-radius: 999px; }
+.dock-hd .sp { flex: 1; }
+.code { margin: 0; max-height: 230px; overflow: auto; padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.6; color: var(--fg-2); background: var(--panel-2); white-space: pre; }
+.code .tg { color: var(--select); }
+.code .at { color: var(--accent-strong); }
+.code .st { color: var(--success); }
+.code .cm { color: var(--fg-3); font-style: italic; }
+
+.toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--fg); color: var(--app-bg); font-size: 12px; font-weight: 510; padding: 9px 16px; border-radius: 999px; z-index: 200; opacity: 0; transition: opacity .2s ease, transform .2s ease; pointer-events: none; box-shadow: var(--shadow-pop); }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.drag-ghost { position: fixed; z-index: 300; pointer-events: none; background: var(--accent); color: var(--accent-ink); font-size: 11px; font-weight: 560; padding: 6px 11px; border-radius: var(--r1); box-shadow: var(--shadow-pop); white-space: nowrap; }
+
+/* ============================================================ SAMPLE DOCUMENT (the page being edited) */
+.doc { font-family: 'Inter', system-ui, sans-serif; color: #1f2430; }
+.doc .hero { background: #16223b; color: #fff; text-align: center; padding: 76px 24px; }
+.doc .hero h1 { font-size: 44px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 16px; }
+.doc .hero p { font-size: 17px; color: #aeb8cc; max-width: 540px; margin: 0 auto 26px; line-height: 1.5; }
+.doc .hero .cta { display: inline-block; background: #e8584c; color: #fff; font-weight: 600; font-size: 15px; padding: 12px 26px; border-radius: 8px; text-decoration: none; }
+.doc .features { padding: 60px 40px; background: #ffffff; }
+.doc .features h2 { text-align: center; font-size: 30px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 38px; }
+.doc .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; max-width: 940px; margin: 0 auto; }
+.doc .card { border: 1px solid #e7eaf0; border-radius: 12px; padding: 24px; }
+.doc .card h3 { font-size: 17px; font-weight: 600; margin-bottom: 8px; }
+.doc .card p { font-size: 14px; color: #5d6577; line-height: 1.55; }
+.doc .about { padding: 60px 40px; background: #f4f6fa; text-align: center; }
+.doc .about h2 { font-size: 28px; font-weight: 700; margin-bottom: 14px; }
+.doc .about p { max-width: 600px; margin: 0 auto; color: #5d6577; line-height: 1.6; font-size: 15px; }
+@media (max-width: 720px) {
+  .doc .cards { grid-template-columns: 1fr; }
+  .doc .hero h1 { font-size: 34px; }
+}
+
+/* ============================================================ RESPONSIVE EDITOR */
+@media (max-width: 1180px) {
+  .work { grid-template-columns: 232px minmax(0,1fr) 264px; }
+  .dock { left: 232px; right: 264px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ===================================================== TOOLBAR -->
+  <header class="toolbar" data-od-id="toolbar">
+    <div class="brand">
+      <span class="name"><b>GrapesJS</b> <span>Angular</span></span>
+      <span class="ver">v1.0</span>
+    </div>
+
+    <span class="tb-sep"></span>
+
+    <div class="seg" id="devices" role="group" aria-label="Device preview">
+      <button data-dev="1080" class="on" title="Desktop"><svg class="ico ico-sm" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="13" rx="1.5"/><path d="M8 21h8M12 17v4"/></svg></button>
+      <button data-dev="768" title="Tablet"><svg class="ico ico-sm" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M11 18h2"/></svg></button>
+      <button data-dev="375" title="Mobile"><svg class="ico ico-sm" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg></button>
+    </div>
+
+    <span class="tb-sep"></span>
+
+    <button class="icobtn" id="undo" title="Undo (⌘Z)"><svg class="ico" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg></button>
+    <button class="icobtn" id="redo" title="Redo (⌘⇧Z)"><svg class="ico" viewBox="0 0 24 24"><path d="M15 14l5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h3"/></svg></button>
+
+    <span class="tb-spacer"></span>
+
+    <div class="seg" id="mode" role="group" aria-label="Editor UI mode">
+      <button data-m="custom" class="on">Custom UI</button>
+      <button data-m="default">Default UI</button>
+    </div>
+
+    <span class="tb-sep"></span>
+
+    <button class="btn" id="save"><svg class="ico" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Save</button>
+    <button class="btn btn-primary" id="export"><svg class="ico" viewBox="0 0 24 24"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg>Export HTML</button>
+
+    <span class="tb-sep"></span>
+
+    <button class="icobtn" id="theme" title="Toggle theme">
+      <svg class="ico t-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      <svg class="ico t-moon" viewBox="0 0 24 24" style="display:none"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+    </button>
+  </header>
+
+  <!-- ===================================================== WORKSPACE -->
+  <div class="work">
+
+    <!-- ---------- LEFT RAIL ---------- -->
+    <aside class="rail left" data-od-id="rail-left">
+
+      <section class="panel">
+        <div class="panel-hd"><span class="ph-ico"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span><h3>Pages</h3><button class="add" id="add-page" title="Add page"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></div>
+        <div class="panel-bd" id="pages"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-hd"><span class="ph-ico"><svg class="ico ico-sm" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span><h3>Blocks</h3></div>
+        <div class="panel-bd">
+          <p class="muted">Drag a block onto the canvas to add it.</p>
+          <div class="bcat">Layout</div>
+          <div class="blocks" id="blocks-layout"></div>
+          <div class="bcat">Basic</div>
+          <div class="blocks" id="blocks-basic"></div>
+        </div>
+      </section>
+
+      <section class="panel" style="flex:1">
+        <div class="panel-hd"><span class="ph-ico"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M12 2l9 5-9 5-9-5 9-5z"/><path d="M3 12l9 5 9-5M3 17l9 5 9-5"/></svg></span><h3>Layers</h3></div>
+        <div class="panel-bd"><div class="layers" id="layers"></div></div>
+      </section>
+
+    </aside>
+
+    <!-- ---------- CANVAS ---------- -->
+    <main class="canvas-area" id="canvas-area" data-od-id="canvas">
+      <div class="canvas-scroll">
+        <div class="frame" id="frame">
+          <div class="frame-bar">
+            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+            <span class="url">home.html</span>
+            <span class="sz" id="frame-sz">1080 px</span>
+          </div>
+          <div class="doc" id="doc">
+
+            <section class="hero" data-sel="hero" data-tag="section.hero">
+              <h1 data-sel="hero-title" data-tag="h1">Build Something Amazing</h1>
+              <p data-sel="hero-sub" data-tag="p">A simple, mobile-friendly starter. Drag, drop, and customise every block to make it your own.</p>
+              <a class="cta" href="#" data-sel="hero-cta" data-tag="a.cta">Explore Features</a>
+            </section>
+
+            <section class="features" data-sel="features" data-tag="section.features">
+              <h2 data-sel="feat-title" data-tag="h2">Features</h2>
+              <div class="cards">
+                <div class="card" data-sel="card-1" data-tag="div.card">
+                  <h3>Responsive Design</h3>
+                  <p>Looks great on any device — phone, tablet, or desktop. Layouts adapt to every screen size.</p>
+                </div>
+                <div class="card" data-sel="card-2" data-tag="div.card">
+                  <h3>Easy to Customise</h3>
+                  <p>Change colours, text, and layout with the visual editor. No code required to make it yours.</p>
+                </div>
+                <div class="card" data-sel="card-3" data-tag="div.card">
+                  <h3>Clean Export</h3>
+                  <p>Plain HTML and CSS with no heavy dependencies. Your site loads quickly and runs anywhere.</p>
+                </div>
+              </div>
+            </section>
+
+            <section class="about" data-sel="about" data-tag="section.about">
+              <h2 data-sel="about-title" data-tag="h2">About Us</h2>
+              <p data-sel="about-body" data-tag="p">We believe building for the web should feel direct. Edit the copy, rearrange sections, or drop in your own components — the canvas is yours.</p>
+            </section>
+
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ---------- RIGHT RAIL ---------- -->
+    <aside class="rail right" data-od-id="rail-right">
+
+      <section class="panel">
+        <div class="panel-hd"><span class="ph-ico"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M3 3l7.5 18 2.5-7.5L20.5 11z"/></svg></span><h3>Selectors</h3></div>
+        <div class="panel-bd">
+          <div class="targets" id="targets"><span class="none">— no selection —</span></div>
+          <div class="chips" id="chips"></div>
+          <div class="field"><label>State</label>
+            <select class="ctl" id="state"><option value="">Normal</option><option value="hover">Hover</option><option value="active">Active</option><option value="focus">Focus</option></select>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" style="flex:1">
+        <div class="panel-hd"><span class="ph-ico"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h6"/></svg></span><h3>Styles</h3></div>
+        <div class="panel-bd" id="styles"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-hd"><span class="ph-ico"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></span><h3>Traits</h3></div>
+        <div class="panel-bd" id="traits"></div>
+      </section>
+
+    </aside>
+
+  </div>
+
+  <!-- statusbar -->
+  <div class="statusbar" data-od-id="statusbar">
+    <span style="color:var(--fg-2)">Selected:</span>
+    <div class="crumbs" id="crumbs"><span class="cb">body</span></div>
+    <div class="right">
+      <span id="zoom">100%</span>
+      <span>Saved <kbd>⌘S</kbd></span>
+    </div>
+  </div>
+
+</div>
+
+<!-- export dock -->
+<div class="dock" id="dock">
+  <div class="dock-inner">
+    <div class="dock-hd">
+      <svg class="ico" viewBox="0 0 24 24"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg>
+      <h4>Exported markup</h4>
+      <span class="lang">HTML</span>
+      <span class="sp"></span>
+      <button class="btn" id="copy"><svg class="ico" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button>
+      <button class="icobtn" id="dock-close" title="Close"><svg class="ico" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <pre class="code" id="code"></pre>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  var doc = $("#doc");
+
+  /* ---------- theme ---------- */
+  var root = document.documentElement;
+  try { var savedT = localStorage.getItem("gjsv2-theme"); if (savedT) root.setAttribute("data-theme", savedT);
+    else if (matchMedia("(prefers-color-scheme: dark)").matches) root.setAttribute("data-theme", "dark"); } catch (e) {}
+  function paintTheme() { var d = root.getAttribute("data-theme") === "dark"; $(".t-sun").style.display = d ? "none" : "block"; $(".t-moon").style.display = d ? "block" : "none"; }
+  paintTheme();
+  $("#theme").addEventListener("click", function () {
+    var d = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    root.setAttribute("data-theme", d); try { localStorage.setItem("gjsv2-theme", d); } catch (e) {} paintTheme();
+  });
+
+  /* ---------- pages ---------- */
+  var pages = [{ n: "Home", on: true }, { n: "About", on: false }, { n: "Pricing", on: false }];
+  function renderPages() {
+    $("#pages").innerHTML = pages.map(function (p, i) {
+      return '<div class="pg ' + (p.on ? "on" : "") + '" data-i="' + i + '">' +
+        '<svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>' +
+        '<span>' + p.n + '</span><span class="meta">' + (p.on ? "active" : "") + "</span></div>";
+    }).join("");
+    $$("#pages .pg").forEach(function (el) { el.addEventListener("click", function () { pages.forEach(function (p) { p.on = false; }); pages[+el.dataset.i].on = true; renderPages(); }); });
+  }
+  $("#add-page").addEventListener("click", function () { pages.forEach(function (p) { p.on = false; }); pages.push({ n: "Page " + (pages.length + 1), on: true }); renderPages(); });
+  renderPages();
+
+  /* ---------- blocks ---------- */
+  var I = {
+    section: '<path d="M3 5h18v14H3zM3 9h18"/>', container: '<rect x="4" y="4" width="16" height="16" rx="1"/>',
+    cols: '<rect x="3" y="4" width="8" height="16" rx="1"/><rect x="13" y="4" width="8" height="16" rx="1"/>',
+    text: '<path d="M4 7h16M4 12h16M4 17h10"/>', heading: '<path d="M6 4v16M18 4v16M6 12h12"/>',
+    image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>',
+    button: '<rect x="3" y="8" width="18" height="8" rx="4"/>', link: '<path d="M10 13a5 5 0 0 0 7 0l2-2a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-2 2a5 5 0 0 0 7 7l1-1"/>',
+    list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>', divider: '<path d="M3 12h18"/>', video: '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M10 9l5 3-5 3z"/>'
+  };
+  function blk(label, key) { return '<div class="block" draggable="false" data-label="' + label + '"><svg class="ico" viewBox="0 0 24 24">' + I[key] + "</svg>" + label + "</div>"; }
+  $("#blocks-layout").innerHTML = [blk("Section", "section"), blk("Container", "container"), blk("2 Columns", "cols"), blk("Divider", "divider")].join("");
+  $("#blocks-basic").innerHTML = [blk("Heading", "heading"), blk("Text", "text"), blk("Image", "image"), blk("Button", "button"), blk("Link", "link"), blk("List", "list")].join("");
+
+  /* block drag ghost (cosmetic, mirrors the real demo's floating ghost) */
+  var ghost = null, area = $("#canvas-area");
+  $$(".block").forEach(function (b) {
+    b.addEventListener("mousedown", function (e) {
+      e.preventDefault();
+      b.classList.add("drag-src");
+      ghost = document.createElement("div"); ghost.className = "drag-ghost"; ghost.textContent = b.dataset.label;
+      document.body.appendChild(ghost); moveGhost(e); area.classList.add("dropping");
+      document.addEventListener("mousemove", moveGhost); document.addEventListener("mouseup", endDrag);
+    });
+  });
+  function moveGhost(e) { if (ghost) { ghost.style.left = e.clientX + 12 + "px"; ghost.style.top = e.clientY + 12 + "px"; } }
+  function endDrag() {
+    if (ghost) { ghost.remove(); ghost = null; }
+    area.classList.remove("dropping"); $$(".block.drag-src").forEach(function (b) { b.classList.remove("drag-src"); });
+    document.removeEventListener("mousemove", moveGhost); document.removeEventListener("mouseup", endDrag);
+    toast("Drop wired to GrapesJS in the live build");
+  }
+
+  /* ---------- element model ---------- */
+  var MODEL = {
+    "hero":        { tag: "section.hero", path: ["body", "section.hero"], type: "box",  fontSize: 44, color: "#ffffff", bg: "#16223b", align: "center", pad: 76, traits: [["id", "hero"], ["title", "Hero section"]] },
+    "hero-title":  { tag: "h1",           path: ["body", "section.hero", "h1"], type: "text", fontSize: 44, color: "#ffffff", bg: "transparent", align: "center", pad: 0, text: "Build Something Amazing", traits: [["id", "hero-title"]] },
+    "hero-sub":    { tag: "p",            path: ["body", "section.hero", "p"], type: "text", fontSize: 17, color: "#aeb8cc", bg: "transparent", align: "center", pad: 0, text: "A simple, mobile-friendly starter...", traits: [["id", "hero-sub"]] },
+    "hero-cta":    { tag: "a.cta",        path: ["body", "section.hero", "a.cta"], type: "btn", fontSize: 15, color: "#ffffff", bg: "#e8584c", align: "center", pad: 12, text: "Explore Features", traits: [["id", "hero-cta"], ["href", "#features"]] },
+    "features":    { tag: "section.features", path: ["body", "section.features"], type: "box", fontSize: 16, color: "#1f2430", bg: "#ffffff", align: "center", pad: 60, traits: [["id", "features"]] },
+    "feat-title":  { tag: "h2",           path: ["body", "section.features", "h2"], type: "text", fontSize: 30, color: "#1f2430", bg: "transparent", align: "center", pad: 0, text: "Features", traits: [["id", "feat-title"]] },
+    "card-1":      { tag: "div.card",     path: ["body", "section.features", "div.card"], type: "box", fontSize: 14, color: "#5d6577", bg: "#ffffff", align: "left", pad: 24, traits: [["id", "card-1"]] },
+    "card-2":      { tag: "div.card",     path: ["body", "section.features", "div.card"], type: "box", fontSize: 14, color: "#5d6577", bg: "#ffffff", align: "left", pad: 24, traits: [["id", "card-2"]] },
+    "card-3":      { tag: "div.card",     path: ["body", "section.features", "div.card"], type: "box", fontSize: 14, color: "#5d6577", bg: "#ffffff", align: "left", pad: 24, traits: [["id", "card-3"]] },
+    "about":       { tag: "section.about", path: ["body", "section.about"], type: "box", fontSize: 15, color: "#5d6577", bg: "#f4f6fa", align: "center", pad: 60, traits: [["id", "about"]] },
+    "about-title": { tag: "h2",           path: ["body", "section.about", "h2"], type: "text", fontSize: 28, color: "#1f2430", bg: "transparent", align: "center", pad: 0, text: "About Us", traits: [["id", "about-title"]] },
+    "about-body":  { tag: "p",            path: ["body", "section.about", "p"], type: "text", fontSize: 15, color: "#5d6577", bg: "transparent", align: "center", pad: 0, text: "We believe building for the web...", traits: [["id", "about-body"]] }
+  };
+
+  /* ---------- layers ---------- */
+  var TREE = { id: "wrap", name: "Wrapper", tag: "body", kids: [
+    { id: "hero", kids: [{ id: "hero-title" }, { id: "hero-sub" }, { id: "hero-cta" }] },
+    { id: "features", kids: [{ id: "feat-title" }, { id: "card-1" }, { id: "card-2" }, { id: "card-3" }] },
+    { id: "about", kids: [{ id: "about-title" }, { id: "about-body" }] }
+  ] };
+  function nameFor(id) { if (id === "wrap") return "Wrapper"; var m = MODEL[id]; return m ? (m.tag.split(".")[0]) : id; }
+  function tagFor(id) { if (id === "wrap") return "body"; return MODEL[id] ? MODEL[id].tag : ""; }
+  function renderLayers() {
+    function node(n, depth) {
+      var hasKids = n.kids && n.kids.length;
+      var selectable = n.id !== "wrap";
+      var label = n.id === "wrap" ? "Wrapper" : labelize(n.id);
+      var row = '<button class="layer-row" data-id="' + n.id + '">' +
+        '<span class="tw">' + (hasKids ? '<svg class="ico" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>' : "") + "</span>" +
+        '<span class="lname">' + label + '</span>' +
+        '<span class="ltag">' + tagFor(n.id) + "</span>" +
+        '<span class="eye"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>' +
+        "</button>";
+      var html = row;
+      if (hasKids) html += '<div class="layer-kids">' + n.kids.map(function (k) { return node(k, depth + 1); }).join("") + "</div>";
+      return html;
+    }
+    $("#layers").innerHTML = node(TREE, 0);
+    $$("#layers .layer-row").forEach(function (el) { el.addEventListener("click", function () { if (el.dataset.id !== "wrap") select(el.dataset.id); }); });
+  }
+  function labelize(id) {
+    var map = { "hero": "Hero", "hero-title": "Heading", "hero-sub": "Text", "hero-cta": "Button",
+      "features": "Features", "feat-title": "Heading", "card-1": "Card", "card-2": "Card", "card-3": "Card",
+      "about": "About", "about-title": "Heading", "about-body": "Text" };
+    return map[id] || id;
+  }
+  renderLayers();
+
+  /* ---------- selection ---------- */
+  var current = null;
+  $$("#doc [data-sel]").forEach(function (el) {
+    el.addEventListener("click", function (e) { e.stopPropagation(); select(el.dataset.sel); });
+  });
+  function select(id) {
+    current = id;
+    $$("#doc [data-sel]").forEach(function (el) { el.classList.toggle("sel", el.dataset.sel === id); });
+    $$("#layers .layer-row").forEach(function (el) { el.classList.toggle("on", el.dataset.id === id); });
+    renderInspector();
+    renderCrumbs();
+  }
+
+  function renderCrumbs() {
+    var m = current && MODEL[current];
+    var path = m ? m.path : ["body"];
+    $("#crumbs").innerHTML = path.map(function (p, i) {
+      var last = i === path.length - 1;
+      return (i ? '<span class="sepc">/</span>' : "") + '<span class="cb ' + (last ? "sel" : "") + '">' + p + "</span>";
+    }).join("");
+  }
+  renderCrumbs();
+
+  /* ---------- inspector (Selectors + Styles + Traits) ---------- */
+  function renderInspector() {
+    var m = current && MODEL[current];
+    // Selectors
+    if (!m) {
+      $("#targets").innerHTML = '<span class="none">— no selection —</span>';
+      $("#chips").innerHTML = "";
+      $("#styles").innerHTML = '<p class="empty">Select an element on the canvas to inspect and edit its styles.</p>';
+      $("#traits").innerHTML = '<p class="empty">Select an element to edit its traits.</p>';
+      return;
+    }
+    $("#targets").textContent = m.tag;
+    var parts = m.tag.split(".");
+    var chips = [];
+    if (parts[0]) chips.push(chip(parts[0]));
+    for (var i = 1; i < parts.length; i++) chips.push(chip("." + parts[i]));
+    $("#chips").innerHTML = chips.join("") + '<span class="chip chip-add" title="Add class"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>';
+
+    renderStyles(m);
+    renderTraits(m);
+  }
+  function chip(t) { return '<span class="chip">' + t + '<button title="remove"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button></span>'; }
+
+  function renderStyles(m) {
+    if (root.getAttribute("data-mode") === "default") {
+      // stock-style read-only property list, same tokens
+      $("#styles").innerHTML =
+        '<p class="mode-note">Default GrapesJS Style Manager — same theme tokens, denser stock layout.</p>' +
+        '<div class="proplist">' +
+        pl("font-size", m.fontSize + "px") + pl("color", m.color) + pl("background", m.bg) +
+        pl("text-align", m.align) + pl("padding", m.pad + "px") + "</div>";
+      return;
+    }
+    var el = elFor(m);
+    var html = "";
+    html += '<details class="sector" open><summary><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h6"/></svg>Typography<span class="chev"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></summary><div class="sbody">';
+    html += '<div class="field"><label>Font size</label><div class="range"><input type="range" id="s-fs" min="11" max="72" value="' + m.fontSize + '"><span class="num" id="s-fs-n">' + m.fontSize + ' px</span></div></div>';
+    html += '<div class="field"><label>Text colour</label><div class="swatch"><input type="color" id="s-col" value="' + hexify(m.color) + '"><span class="val" id="s-col-n">' + m.color + '</span></div></div>';
+    html += '<div class="field"><label>Text align</label><div class="seg" id="s-align" style="width:100%">' +
+      alignBtn("left", m.align) + alignBtn("center", m.align) + alignBtn("right", m.align) + "</div></div>";
+    html += "</div></details>";
+    html += '<details class="sector" open><summary><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M19 11a7 7 0 1 1-14 0 7 7 0 0 1 14 0z"/><path d="M12 4V2M12 22v-2"/></svg>Background<span class="chev"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></summary><div class="sbody">';
+    html += '<div class="field"><label>Background colour</label><div class="swatch"><input type="color" id="s-bg" value="' + hexify(m.bg) + '"><span class="val" id="s-bg-n">' + m.bg + '</span></div></div>';
+    html += "</div></details>";
+    html += '<details class="sector" open><summary><svg class="ico ico-sm" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="1"/><rect x="9" y="9" width="6" height="6"/></svg>Spacing<span class="chev"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></summary><div class="sbody">';
+    html += '<div class="field"><label>Padding</label><div class="range"><input type="range" id="s-pad" min="0" max="120" value="' + m.pad + '"><span class="num" id="s-pad-n">' + m.pad + ' px</span></div></div>';
+    html += "</div></details>";
+    $("#styles").innerHTML = html;
+
+    bind("#s-fs", "input", function (v) { m.fontSize = +v; $("#s-fs-n").textContent = v + " px"; if (el) el.style.fontSize = v + "px"; });
+    bind("#s-col", "input", function (v) { m.color = v; $("#s-col-n").textContent = v; if (el) el.style.color = v; });
+    bind("#s-bg", "input", function (v) { m.bg = v; $("#s-bg-n").textContent = v; if (el) el.style.background = v; });
+    bind("#s-pad", "input", function (v) { m.pad = +v; $("#s-pad-n").textContent = v + " px"; if (el) el.style.padding = v + "px"; });
+    $$("#s-align button").forEach(function (b) { b.addEventListener("click", function () {
+      m.align = b.dataset.v; $$("#s-align button").forEach(function (x) { x.classList.toggle("on", x === b); });
+      if (el) el.style.textAlign = m.align;
+    }); });
+  }
+  function pl(k, v) { return '<div class="pl"><span class="pk">' + k + '</span><span class="pv">' + v + "</span></div>"; }
+  function alignBtn(v, cur) {
+    var ic = { left: '<path d="M3 6h18M3 12h12M3 18h15"/>', center: '<path d="M3 6h18M7 12h10M5 18h14"/>', right: '<path d="M3 6h18M9 12h12M6 18h15"/>' };
+    return '<button data-v="' + v + '" class="' + (v === cur ? "on" : "") + '" style="flex:1"><svg class="ico ico-sm" viewBox="0 0 24 24">' + ic[v] + "</svg></button>";
+  }
+  function bind(sel, ev, fn) { var e = $(sel); if (e) e.addEventListener(ev, function () { fn(e.value); }); }
+
+  function renderTraits(m) {
+    var html = "";
+    if (m.type === "text" || m.type === "btn") {
+      html += '<div class="field"><label>Text</label><input class="ctl" id="t-text" value="' + esc(m.text || "") + '"></div>';
+    }
+    (m.traits || []).forEach(function (t, i) {
+      html += '<div class="field"><label>' + t[0] + '</label><input class="ctl" data-ti="' + i + '" value="' + esc(t[1]) + '"></div>';
+    });
+    $("#traits").innerHTML = html || '<p class="empty">This element has no editable traits.</p>';
+    var el = elFor(m);
+    var tt = $("#t-text"); if (tt) tt.addEventListener("input", function () { m.text = tt.value; if (el) setText(el, tt.value); });
+    $$("#traits [data-ti]").forEach(function (inp) { inp.addEventListener("input", function () { m.traits[+inp.dataset.ti][1] = inp.value; }); });
+  }
+  function setText(el, v) {
+    // update only the direct text, preserve child structure for boxes (here text/btn are leaf-ish)
+    if (el.children.length === 0) el.textContent = v; else el.firstChild && (el.firstChild.textContent = v);
+  }
+
+  function elFor(m) {
+    for (var id in MODEL) { if (MODEL[id] === m) return $('#doc [data-sel="' + id + '"]'); }
+    return null;
+  }
+
+  /* ---------- helpers ---------- */
+  function hexify(c) { if (!c || c === "transparent") return "#ffffff"; if (c[0] === "#") return c.length === 4 ? "#" + c[1] + c[1] + c[2] + c[2] + c[3] + c[3] : c; return "#ffffff"; }
+  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+
+  /* ---------- devices ---------- */
+  $$("#devices button").forEach(function (b) { b.addEventListener("click", function () {
+    $$("#devices button").forEach(function (x) { x.classList.toggle("on", x === b); });
+    var w = b.dataset.dev; $("#frame").style.maxWidth = w + "px"; $("#frame-sz").textContent = w + " px";
+  }); });
+
+  /* ---------- mode ---------- */
+  $$("#mode button").forEach(function (b) { b.addEventListener("click", function () {
+    $$("#mode button").forEach(function (x) { x.classList.toggle("on", x === b); });
+    root.setAttribute("data-mode", b.dataset.m);
+    if (current) renderStyles(MODEL[current]);
+  }); });
+
+  /* ---------- save / undo / redo ---------- */
+  $("#save").addEventListener("click", function () { toast("Project saved to local storage"); });
+  $("#undo").addEventListener("click", function () { toast("Nothing to undo"); });
+  $("#redo").addEventListener("click", function () { toast("Nothing to redo"); });
+
+  /* ---------- export ---------- */
+  function buildHtml() {
+    var clone = doc.cloneNode(true);
+    $$("[data-sel]", clone).forEach(function (e) { e.removeAttribute("data-sel"); e.removeAttribute("data-tag"); e.classList.remove("sel"); if (!e.getAttribute("class")) e.removeAttribute("class"); });
+    var body = clone.innerHTML.replace(/\n\s*\n/g, "\n").trim();
+    return '<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>GrapesJS Export</title>\n  <link rel="stylesheet" href="styles.css">\n</head>\n<body>\n' + indent(body, 2) + "\n</body>\n</html>";
+  }
+  function indent(s, n) { var p = new Array(n + 1).join(" "); return s.split("\n").map(function (l) { return l.trim() ? p + l : l; }).join("\n"); }
+  function highlight(s) {
+    return esc(s)
+      .replace(/(&lt;!--.*?--&gt;)/g, '<span class="cm">$1</span>')
+      .replace(/(&lt;\/?)([a-zA-Z0-9]+)/g, '$1<span class="tg">$2</span>')
+      .replace(/([a-zA-Z-]+)=(&quot;.*?&quot;)/g, '<span class="at">$1</span>=<span class="st">$2</span>');
+  }
+  var exportedRaw = "";
+  $("#export").addEventListener("click", function () {
+    exportedRaw = buildHtml();
+    $("#code").innerHTML = highlight(exportedRaw);
+    $("#dock").classList.add("open");
+  });
+  $("#dock-close").addEventListener("click", function () { $("#dock").classList.remove("open"); });
+  $("#copy").addEventListener("click", function () {
+    try { navigator.clipboard.writeText(exportedRaw); toast("Markup copied"); } catch (e) { toast("Copy unavailable"); }
+  });
+
+  /* ---------- toast ---------- */
+  var tTimer; function toast(msg) { var t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(tTimer); tTimer = setTimeout(function () { t.classList.remove("show"); }, 1800); }
+
+  /* ---------- keyboard ---------- */
+  document.addEventListener("keydown", function (e) {
+    if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") { e.preventDefault(); toast("Project saved"); }
+    if (e.key === "Escape") { current = null; $$("#doc .sel").forEach(function (x) { x.classList.remove("sel"); }); $$("#layers .on").forEach(function (x) { x.classList.remove("on"); }); renderInspector(); renderCrumbs(); $("#dock").classList.remove("open"); }
+  });
+
+  /* ---------- init: select hero ---------- */
+  select("hero");
+})();
+</script>
+</body>
+</html>
