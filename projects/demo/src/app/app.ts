@@ -1,5 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
-import { KeyValuePipe, NgTemplateOutlet } from '@angular/common';
+import { DOCUMENT, KeyValuePipe, NgTemplateOutlet } from '@angular/common';
 import {
   GrapesJsEditorComponent,
   GrapesJsEditorService,
@@ -42,6 +42,8 @@ import { SAMPLE_HTML, SAMPLE_CSS } from './sample-content';
 })
 export class App {
   private editorService = inject(GrapesJsEditorService);
+  private doc = inject(DOCUMENT);
+  protected theme = signal<'light' | 'dark'>('light');
   protected htmlOutput = signal('');
   protected customUi = signal(false);
   protected dragging = signal(false);
@@ -109,8 +111,34 @@ export class App {
     console.log('[Demo] Project loaded', data);
   }
 
+  constructor() {
+    let saved: string | null = null;
+    try {
+      saved = localStorage.getItem('gjs-demo-theme');
+    } catch {
+      /* storage unavailable (private mode / SSR) — fall back to OS preference */
+    }
+    const prefersDark =
+      typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: dark)').matches;
+    this.setTheme((saved === 'light' || saved === 'dark' ? saved : prefersDark ? 'dark' : 'light'));
+  }
+
   toggleCustomUi(): void {
     this.customUi.update((v) => !v);
+  }
+
+  toggleTheme(): void {
+    this.setTheme(this.theme() === 'dark' ? 'light' : 'dark');
+  }
+
+  private setTheme(t: 'light' | 'dark'): void {
+    this.theme.set(t);
+    this.doc.documentElement.setAttribute('data-theme', t);
+    try {
+      localStorage.setItem('gjs-demo-theme', t);
+    } catch {
+      /* ignore persistence failures */
+    }
   }
 
   /** Layers-panel row click. A GrapesJS Component has no `.select()` — selection
