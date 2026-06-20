@@ -43,6 +43,9 @@ import { SAMPLE_HTML, SAMPLE_CSS } from './sample-content';
 export class App {
   private editorService = inject(GrapesJsEditorService);
   private doc = inject(DOCUMENT);
+  /** The component currently selected on the canvas (null = nothing selected).
+   *  Drives the inspector's empty state. */
+  protected selectedComponent = this.editorService.selectedComponent;
   protected theme = signal<'light' | 'dark'>('light');
   protected htmlOutput = signal('');
   protected customUi = signal(false);

@@ -125,26 +125,33 @@
             <ng-template let-ctx>
               <section class="panel">
                 <h3>Selectors</h3>
-                <p class="muted">{{ ctx.targets.join(' ') || '— no selection —' }}</p>
-                <div class="chips">
-                  @for (s of ctx.selectors; track s.cid) {
-                    <span class="chip">
-                      {{ s.getFullName() }}
-                      <button (click)="ctx.removeSelector(s.getName())">×</button>
-                    </span>
-                  }
-                </div>
-                <select
-                  class="state-select"
-                  [value]="ctx.selectedState"
-                  (change)="ctx.setState($any($event.target).value)">
-                  <option value="">— state —</option>
-                  @for (st of ctx.states; track st.id) {
-                    <option [value]="st.get('name')">
-                      {{ st.get('label') ?? st.get('name') }}
-                    </option>
-                  }
-                </select>
+                @if (!selectedComponent()) {
+                  <p class="muted">Select an element to edit its selectors and state.</p>
+                } @else {
+                  <div class="targets">{{ ctx.targets.join(' ') || '—' }}</div>
+                  <div class="chips">
+                    @for (s of ctx.selectors; track s.cid) {
+                      <span class="chip">
+                        {{ s.getFullName() }}
+                        <button (click)="ctx.removeSelector(s.getName())" aria-label="Remove selector">×</button>
+                      </span>
+                    }
+                  </div>
+                  <label class="style-field">
+                    <span>State</span>
+                    <select
+                      class="ctl"
+                      [value]="ctx.selectedState"
+                      (change)="ctx.setState($any($event.target).value)">
+                      <option value="">Normal</option>
+                      @for (st of ctx.states; track st.id) {
+                        <option [value]="st.get('name')">
+                          {{ st.get('label') || st.get('name') }}
+                        </option>
+                      }
+                    </select>
+                  </label>
+                }
               </section>
             </ng-template>
           </gjs-selectors-provider>
@@ -153,21 +160,40 @@
             <ng-template let-ctx>
               <section class="panel">
                 <h3>Styles</h3>
-                @if (!ctx.sectors.length) {
-                  <p class="muted">Select a component to inspect its styles.</p>
-                }
-                @for (sector of ctx.sectors; track sector.cid) {
-                  <details open>
-                    <summary>{{ sector.getName() }}</summary>
-                    <ul class="property-list">
-                      @for (prop of sector.getProperties(); track prop.cid) {
-                        <li>
-                          <span>{{ prop.getName() }}</span>:
-                          <code>{{ prop.getValue() ?? '—' }}</code>
-                        </li>
-                      }
-                    </ul>
-                  </details>
+                @if (!selectedComponent()) {
+                  <p class="muted">Select an element to edit its styles.</p>
+                } @else {
+                  @for (sector of ctx.sectors; track sector.cid) {
+                    <details open>
+                      <summary>{{ sector.getName() }}</summary>
+                      <div class="style-fields">
+                        @for (prop of sector.getProperties(); track prop.cid) {
+                          <label class="style-field">
+                            <span>{{ prop.getName() }}</span>
+                            @if (prop.getType() === 'select' || prop.getType() === 'radio') {
+                              <select
+                                class="ctl"
+                                [value]="prop.getValue() ?? ''"
+                                (change)="prop.upValue($any($event.target).value)">
+                                @for (opt of $any(prop).getOptions(); track $index) {
+                                  <option [value]="$any(prop).getOptionId(opt)">
+                                    {{ $any(prop).getOptionLabel(opt) }}
+                                  </option>
+                                }
+                              </select>
+                            } @else if (prop.getType() === 'composite' || prop.getType() === 'stack') {
+                              <span class="style-ro">{{ prop.getValue() || '—' }}</span>
+                            } @else {
+                              <input
+                                class="ctl"
+                                [value]="prop.getValue() ?? ''"
+                                (change)="prop.upValue($any($event.target).value)">
+                            }
+                          </label>
+                        }
+                      </div>
+                    </details>
+                  }
                 }
               </section>
             </ng-template>
