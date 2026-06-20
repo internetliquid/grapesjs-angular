@@ -19,11 +19,11 @@
 
 .btn,
 .icon-btn,
-.toggle {
+.seg button {
   font-family: var(--font-ui);
 }
 
-:where(.btn, .icon-btn, .toggle, .device-select, .state-select, .trait input):focus-visible {
+:where(.btn, .icon-btn, .seg button, .device-select, .state-select, .trait input):focus-visible {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-wash);
@@ -109,27 +109,44 @@
   color: var(--fg);
 }
 
-/* Custom/Default switch — neutral, pushed to the right edge */
-.toggle {
-  margin-left: auto;
+/* segmented control (Custom/Default mode switch) */
+.seg {
   display: inline-flex;
-  align-items: center;
-  height: 32px;
-  padding: 0 14px;
+  gap: 2px;
+  padding: 2px;
   background: var(--panel-2);
   border: 1px solid var(--border);
   border-radius: var(--r2);
+}
+.mode-seg {
+  margin-left: auto;
+}
+.seg button {
+  height: 26px;
+  min-width: 32px;
+  padding: 0 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
   color: var(--fg-2);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 510;
   cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+  transition: background 0.14s ease, color 0.14s ease, box-shadow 0.14s ease;
 }
-.toggle:hover {
-  background: var(--panel-3);
-  border-color: var(--border-2);
+.seg button:hover {
   color: var(--fg);
+}
+.seg button.on {
+  background: var(--panel);
+  color: var(--fg);
+  box-shadow: 0 1px 2px oklch(0% 0 0 / 0.08);
+}
+html[data-theme="dark"] .seg button.on {
+  background: var(--panel-3);
 }
 
 /* device picker (custom mode only) */
@@ -675,13 +692,73 @@
   border-color: var(--accent);
 }
 
+/* ---------- HTML export dock (slide-up) ---------- */
+.export-dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1100;
+  background: var(--panel);
+  border-top: 1px solid var(--border-2);
+  box-shadow: 0 -16px 40px oklch(0% 0 0 / 0.14);
+  animation: export-dock-up 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes export-dock-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.export-dock-hd {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.export-dock-hd .ico {
+  color: var(--accent-strong);
+}
+
+.export-dock-hd h4 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--fg);
+}
+
+.export-dock-hd .lang {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--fg-3);
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  padding: 1px 7px;
+  border-radius: 999px;
+}
+
+.export-dock-hd .sp {
+  flex: 1;
+}
+
+.export-dock-hd .btn {
+  height: 28px;
+  padding: 0 12px;
+}
+
 /* ---------- HTML export output ---------- */
 .html-output {
   margin: 0;
   padding: 14px 16px;
   background: var(--panel-2);
   color: var(--fg-2);
-  border-top: 1px solid var(--border);
   font-family: var(--font-mono);
   font-size: 12px;
   line-height: 1.6;
@@ -693,7 +770,7 @@
 @media (prefers-reduced-motion: reduce) {
   .btn,
   .icon-btn,
-  .toggle,
+  .seg button,
   .custom-sidebar .block,
   .layer .layer-row,
   .drop-indicator,
@@ -706,5 +783,8 @@
   }
   .custom-sidebar .block:hover {
     transform: none;
+  }
+  .export-dock {
+    animation: none;
   }
 }

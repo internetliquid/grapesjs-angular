@@ -16,9 +16,10 @@
       </ng-template>
     </gjs-devices-provider>
   }
-  <button (click)="toggleCustomUi()" class="toggle">
-    {{ customUi() ? 'Switch to default UI' : 'Switch to custom UI' }}
-  </button>
+  <div class="seg mode-seg" role="group" aria-label="Editor UI mode">
+    <button type="button" [class.on]="customUi()" (click)="setCustomUi(true)">Custom UI</button>
+    <button type="button" [class.on]="!customUi()" (click)="setCustomUi(false)">Default UI</button>
+  </div>
 
   <button
     type="button"
@@ -267,7 +268,23 @@
 </ng-template>
 
 @if (htmlOutput()) {
-  <pre class="html-output">{{ htmlOutput() }}</pre>
+  <div class="export-dock">
+    <div class="export-dock-hd">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M16 18l6-6-6-6M8 6l-6 6 6 6" />
+      </svg>
+      <h4>Exported markup</h4>
+      <span class="lang">HTML</span>
+      <span class="sp"></span>
+      <button class="btn" (click)="copyHtml()">Copy</button>
+      <button class="icon-btn" (click)="htmlOutput.set('')" aria-label="Close export">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M18 6L6 18M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+    <pre class="html-output">{{ htmlOutput() }}</pre>
+  </div>
 }
 
 @if (dragging() && draggedLabel(); as label) {

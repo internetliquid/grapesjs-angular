@@ -123,8 +123,8 @@ export class App {
     this.setTheme((saved === 'light' || saved === 'dark' ? saved : prefersDark ? 'dark' : 'light'));
   }
 
-  toggleCustomUi(): void {
-    this.customUi.update((v) => !v);
+  setCustomUi(custom: boolean): void {
+    this.customUi.set(custom);
   }
 
   toggleTheme(): void {
@@ -173,6 +173,11 @@ export class App {
 </html>`;
     this.htmlOutput.set(fullHtml);
     this.downloadFile('grapesjs-export.html', fullHtml, 'text/html');
+  }
+
+  copyHtml(): void {
+    const html = this.htmlOutput();
+    if (html) navigator.clipboard?.writeText(html);
   }
 
   reset(): void {
