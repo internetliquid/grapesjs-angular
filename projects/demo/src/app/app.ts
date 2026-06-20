@@ -184,6 +184,13 @@ export class App {
     this.editorService.editor()?.select(c);
   }
 
+  /** Layer-tree children, minus GrapesJS's non-layerable nodes — chiefly the
+   *  textnodes that otherwise surface as meaningless "Box" rows. Mirrors
+   *  GrapesJS's own layer manager, which hides them. */
+  layerChildren(c: GjsComponent): GjsComponent[] {
+    return c.components().filter((child: GjsComponent) => child.get('layerable') !== false);
+  }
+
   /** The block's icon (its GrapesJS `media` SVG), for the block tiles. */
   blockIcon(block: Block): SafeHtml {
     const id = block.getId();

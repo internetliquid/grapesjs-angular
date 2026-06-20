@@ -116,9 +116,6 @@
 
         <div class="canvas-wrap">
           <gjs-canvas class="custom-canvas"></gjs-canvas>
-          <div class="drop-indicator" aria-hidden="true">
-            <span class="drop-hint">Drop here</span>
-          </div>
         </div>
 
         <aside class="custom-sidebar custom-sidebar-right">
@@ -282,9 +279,9 @@
     <button class="layer-row" (click)="selectLayer(c)">
       {{ c.getName() || 'Component' }}
     </button>
-    @if (c.components()?.length) {
+    @if (layerChildren(c).length) {
       <div class="layer-children">
-        @for (child of c.components(); track child.getId()) {
+        @for (child of layerChildren(c); track child.getId()) {
           <ng-container
             *ngTemplateOutlet="layerNode; context: { $implicit: child }">
           </ng-container>

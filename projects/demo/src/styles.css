@@ -149,6 +149,15 @@ html[data-theme="dark"] {
 .gjs-resizer-h {
   border-color: var(--select) !important;
 }
+/* drag-drop insertion indicator (sorter placeholder) → a clear accent line at
+   the actual drop point, in both custom and default UI */
+.gjs-placeholder {
+  border-color: var(--accent) !important;
+}
+.gjs-placeholder-int {
+  background-color: var(--accent) !important;
+  border-color: var(--accent) !important;
+}
 
 *, *::before, *::after {
   box-sizing: border-box;

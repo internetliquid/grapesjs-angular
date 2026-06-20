@@ -558,49 +558,9 @@ select.ctl {
   min-width: 0;
 }
 
-/* Overlay layered on top of the GrapesJS iframe so the drop indicator is
-   actually visible. The iframe creates its own painting layer, so without an
-   explicit z-index the indicator paints behind the iframe content and only
-   the outer edges (where the iframe doesn't extend) remain visible. */
-.drop-indicator {
-  position: absolute;
-  inset: 0;
-  z-index: 20;
-  border: 2px dashed transparent;
-  pointer-events: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: border-color 0.12s ease, background-color 0.12s ease;
-}
-
-.drop-indicator .drop-hint {
-  background: var(--accent);
-  color: var(--accent-ink);
-  border-radius: 999px;
-  padding: 6px 14px;
-  font-size: 11px;
-  font-weight: 560;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  opacity: 0;
-  transform: translateY(-4px);
-  transition: opacity 0.12s ease, transform 0.12s ease;
-  box-shadow: var(--shadow-pop);
-}
-
-.custom-layout.is-dragging .drop-indicator {
-  border-color: var(--accent);
-  background-color: var(--accent-wash);
-}
-
-.custom-layout.is-dragging .drop-indicator .drop-hint {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* Cue at the cursor too — the overlay outline isn't always in peripheral
-   vision when the user has eyes on the block they're dragging. */
+/* While dragging a block, show the grabbing cursor everywhere. The actual
+   insertion indicator is GrapesJS's own themed `.gjs-placeholder` (see global
+   styles.css) — a precise line at the drop point, not a full-canvas overlay. */
 .custom-layout.is-dragging,
 .custom-layout.is-dragging * {
   cursor: grabbing !important;
@@ -816,8 +776,6 @@ select.ctl {
   .seg button,
   .custom-sidebar .block,
   .layer .layer-row,
-  .drop-indicator,
-  .drop-indicator .drop-hint,
   .asset-tile {
     transition: none;
   }
