@@ -1,5 +1,6 @@
 .toolbar {
   display: flex;
+  align-items: center;
   gap: 8px;
   padding: 8px;
   background: #333;
@@ -19,10 +20,464 @@
   background: #666;
 }
 
-.editor-container {
-  height: calc(100vh - 50px);
+.toolbar .device-select {
+  margin-left: 8px;
+  padding: 6px 10px;
+  background: #444;
+  color: #fff;
+  border: 1px solid #555;
+  border-radius: 4px;
+  font-size: 13px;
 }
 
+.toolbar button.toggle {
+  margin-left: auto;
+  background: #276ef1;
+  border-color: #276ef1;
+}
+
+.toolbar button.toggle:hover {
+  background: #1e5acc;
+}
+
+.editor-container {
+  /* Grid track from <demo-root> gives this a real pixel height; turning it
+     into a flex column lets the inner gjs-editor stretch reliably. */
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.editor-container > gjs-editor {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* ───── Custom UI mode ───── */
+
+.custom-ui-editor {
+  display: block;
+  height: 100%;
+}
+
+.custom-layout {
+  display: flex;
+  height: 100%;
+  width: 100%;
+}
+
+.custom-sidebar {
+  width: 280px;
+  background: #1e1e1e;
+  color: #eee;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.custom-sidebar-left {
+  border-right: 1px solid #2b2b2b;
+}
+
+.custom-sidebar-right {
+  border-left: 1px solid #2b2b2b;
+}
+
+.custom-sidebar .panel {
+  padding: 12px 0;
+  border-bottom: 1px solid #2b2b2b;
+}
+
+.custom-sidebar .panel:last-child {
+  border-bottom: none;
+}
+
+.custom-sidebar .panel h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #9aa;
+}
+
+.custom-sidebar .panel h4 {
+  margin: 12px 0 4px;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #778;
+}
+
+.custom-sidebar .panel .muted {
+  color: #888;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+
+.custom-sidebar .panel ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 8px;
+}
+
+.custom-sidebar .panel li {
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.custom-sidebar .panel li.active,
+.custom-sidebar .panel li:hover {
+  background: #2a2a2a;
+}
+
+.custom-sidebar .block-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.custom-sidebar .block {
+  background: #2a2a2a;
+  color: #ddd;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  padding: 12px 8px;
+  font-size: 12px;
+  cursor: grab;
+  transition: transform .05s ease, box-shadow .1s ease;
+}
+
+.custom-sidebar .block:hover {
+  background: #333;
+}
+
+.custom-sidebar .block:active {
+  cursor: grabbing;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.custom-sidebar .panel button {
+  background: #2a2a2a;
+  color: #ddd;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.custom-sidebar .panel button:hover {
+  background: #333;
+}
+
+/* Layer tree */
+.layer .layer-row {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  color: #ddd;
+  padding: 4px 6px;
+  font-size: 12px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.layer .layer-row:hover {
+  background: #2a2a2a;
+}
+
+.layer-children {
+  margin-left: 12px;
+  border-left: 1px solid #2b2b2b;
+  padding-left: 4px;
+}
+
+/* Selectors chips */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0 0 8px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  color: #ddd;
+  border-radius: 999px;
+  padding: 2px 4px 2px 8px;
+  font-size: 11px;
+}
+
+.chip button {
+  background: transparent;
+  border: 0;
+  color: #aaa;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 0 4px;
+}
+
+.chip button:hover {
+  color: #fff;
+}
+
+.state-select {
+  width: 100%;
+  background: #2a2a2a;
+  color: #ddd;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  padding: 4px 6px;
+  font-size: 12px;
+}
+
+/* Styles list */
+.property-list {
+  margin: 6px 0 0 0 !important;
+  padding-left: 12px !important;
+  list-style: disc !important;
+}
+
+.property-list li {
+  padding: 2px 0 !important;
+  cursor: default !important;
+  font-size: 11px !important;
+  background: transparent !important;
+}
+
+.property-list code {
+  background: #141414;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 10px;
+  color: #9cd;
+}
+
+.custom-sidebar details {
+  margin-bottom: 6px;
+}
+
+.custom-sidebar details summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: #ccc;
+  padding: 2px 0;
+}
+
+/* Traits inputs */
+.trait {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+
+.trait span {
+  font-size: 11px;
+  color: #9aa;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.trait input {
+  background: #2a2a2a;
+  color: #ddd;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  padding: 5px 8px;
+  font-size: 12px;
+}
+
+.trait input:focus {
+  outline: none;
+  border-color: #276ef1;
+}
+
+/* Canvas + drag indicator */
+.canvas-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+
+.custom-canvas {
+  flex: 1;
+  display: block;
+  min-width: 0;
+}
+
+/* Overlay layered on top of the GrapesJS iframe so the drop indicator is
+   actually visible. The iframe creates its own painting layer, so without an
+   explicit z-index the indicator paints behind the iframe content and only
+   the outer edges (where the iframe doesn't extend) remain visible. */
+.drop-indicator {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  border: 2px dashed transparent;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color .12s ease, background-color .12s ease;
+}
+
+.drop-indicator .drop-hint {
+  background: #276ef1;
+  color: #fff;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity .12s ease, transform .12s ease;
+}
+
+.custom-layout.is-dragging .drop-indicator {
+  border-color: #276ef1;
+  background-color: rgba(39, 110, 241, 0.06);
+}
+
+.custom-layout.is-dragging .drop-indicator .drop-hint {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Cue at the cursor too — the overlay outline isn't always in peripheral
+   vision when the user has eyes on the block they're dragging. */
+.custom-layout.is-dragging,
+.custom-layout.is-dragging * {
+  cursor: grabbing !important;
+}
+
+/* Source block dims while it's being dragged — visually pairs the source
+   tile with the floating ghost so the user sees the lift. */
+.custom-sidebar .block.is-source {
+  opacity: 0.35;
+  box-shadow: none;
+  transform: none;
+}
+
+/* Floating ghost label that follows the cursor during a drag — bound to
+   .drag-ghost via cursorX/Y signals updated on `mousemove`. */
+.drag-ghost {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  background: #276ef1;
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* Floating overlays (Assets, Modal) */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.overlay-card {
+  background: #1e1e1e;
+  color: #eee;
+  border-radius: 6px;
+  width: 90%;
+  max-width: 720px;
+  max-height: 80vh;
+  overflow: auto;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+}
+
+.overlay-card header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #2b2b2b;
+}
+
+.overlay-card header h3 {
+  margin: 0;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #9aa;
+}
+
+.overlay-card header button {
+  background: transparent;
+  border: 0;
+  color: #aaa;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.overlay-card header button:hover {
+  color: #fff;
+}
+
+.overlay-card .modal-body,
+.overlay-card .asset-grid {
+  padding: 16px;
+}
+
+.asset-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.asset-tile {
+  aspect-ratio: 1;
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  padding: 0;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.asset-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.asset-tile:hover {
+  border-color: #276ef1;
+}
+
+/* HTML preview output */
 .html-output {
   margin: 0;
   padding: 12px;

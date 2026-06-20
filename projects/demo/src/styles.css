@@ -1,7 +1,23 @@
 @import 'grapesjs/dist/css/grapes.min.css';
 
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 html, body {
   margin: 0;
   padding: 0;
   height: 100%;
+  overflow: hidden;
+}
+
+/* Pin <demo-root> to the viewport regardless of body or ancestor sizing —
+   percentage height chains through nested flex/grid have been unreliable
+   here, so fixed positioning is the cheapest definite constraint. */
+demo-root {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
 }

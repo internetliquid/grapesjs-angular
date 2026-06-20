@@ -2,16 +2,260 @@
   <button (click)="save()">Save</button>
   <button (click)="getHtml()">Get HTML</button>
   <button (click)="reset()">Reset</button>
+  @if (customUi()) {
+    <gjs-devices-provider>
+      <ng-template let-ctx>
+        <select
+          class="device-select"
+          [value]="ctx.selected"
+          (change)="ctx.select($any($event.target).value)">
+          @for (d of ctx.devices; track d.id) {
+            <option [value]="d.id">{{ d.get('name') ?? d.id }}</option>
+          }
+        </select>
+      </ng-template>
+    </gjs-devices-provider>
+  }
+  <button (click)="toggleCustomUi()" class="toggle">
+    {{ customUi() ? 'Switch to default UI' : 'Switch to custom UI' }}
+  </button>
 </div>
 
 <div class="editor-container">
-  <gjs-editor
-    (editorReady)="onEditorReady($event)"
-    (projectSaved)="onProjectSaved($event)"
-    (projectLoaded)="onProjectLoaded($event)">
-  </gjs-editor>
+  @if (!customUi()) {
+    <gjs-editor
+      (editorReady)="onEditorReady($event)"
+      (projectSaved)="onProjectSaved($event)"
+      (projectLoaded)="onProjectLoaded($event)">
+    </gjs-editor>
+  } @else {
+    <gjs-editor
+      class="custom-ui-editor"
+      (editorReady)="onEditorReady($event)"
+      (projectSaved)="onProjectSaved($event)"
+      (projectLoaded)="onProjectLoaded($event)">
+      <div class="custom-layout" [class.is-dragging]="dragging()">
+        <aside class="custom-sidebar custom-sidebar-left">
+          <gjs-pages-provider>
+            <ng-template let-ctx>
+              <section class="panel">
+                <h3>Pages</h3>
+                <ul>
+                  @for (page of ctx.pages; track page.getId(); let i = $index) {
+                    <li
+                      [class.active]="ctx.selected?.getId() === page.getId()"
+                      (click)="ctx.select(page)">
+                      {{ page.get('name') || 'Page ' + (i + 1) }}
+                    </li>
+                  }
+                </ul>
+                <button (click)="ctx.add({ name: 'Page ' + (ctx.pages.length + 1) })">+ Page</button>
+              </section>
+            </ng-template>
+          </gjs-pages-provider>
+
+          <gjs-blocks-provider>
+            <ng-template let-ctx>
+              <section class="panel">
+                <h3>Blocks</h3>
+                <p class="muted">Drag blocks onto the canvas.</p>
+                @for (entry of ctx.mapCategoryBlocks | keyvalue; track entry.key) {
+                  <div class="category">
+                    <h4>{{ entry.key }}</h4>
+                    <div class="block-grid">
+                      @for (block of entry.value; track block.getId()) {
+                        <button
+                          class="block"
+                          [class.is-source]="dragging() && draggedLabel() === block.getLabel()"
+                          (mousedown)="startBlockDrag(block, $event, ctx.dragStart)"
+                          (mouseup)="ctx.dragStop()">
+                          {{ block.getLabel() }}
+                        </button>
+                      }
+                    </div>
+                  </div>
+                }
+              </section>
+            </ng-template>
+          </gjs-blocks-provider>
+
+          <gjs-layers-provider>
+            <ng-template let-ctx>
+              <section class="panel">
+                <h3>Layers</h3>
+                @if (ctx.root) {
+                  <ng-container
+                    *ngTemplateOutlet="layerNode; context: { $implicit: ctx.root }">
+                  </ng-container>
+                }
+              </section>
+            </ng-template>
+          </gjs-layers-provider>
+        </aside>
+
+        <div class="canvas-wrap">
+          <gjs-canvas class="custom-canvas"></gjs-canvas>
+          <div class="drop-indicator" aria-hidden="true">
+            <span class="drop-hint">Drop here</span>
+          </div>
+        </div>
+
+        <aside class="custom-sidebar custom-sidebar-right">
+          <gjs-selectors-provider>
+            <ng-template let-ctx>
+              <section class="panel">
+                <h3>Selectors</h3>
+                <p class="muted">{{ ctx.targets.join(' ') || '— no selection —' }}</p>
+                <div class="chips">
+                  @for (s of ctx.selectors; track s.cid) {
+                    <span class="chip">
+                      {{ s.getFullName() }}
+                      <button (click)="ctx.removeSelector(s.getName())">×</button>
+                    </span>
+                  }
+                </div>
+                <select
+                  class="state-select"
+                  [value]="ctx.selectedState"
+                  (change)="ctx.setState($any($event.target).value)">
+                  <option value="">— state —</option>
+                  @for (st of ctx.states; track st.id) {
+                    <option [value]="st.get('name')">
+                      {{ st.get('label') ?? st.get('name') }}
+                    </option>
+                  }
+                </select>
+              </section>
+            </ng-template>
+          </gjs-selectors-provider>
+
+          <gjs-styles-provider>
+            <ng-template let-ctx>
+              <section class="panel">
+                <h3>Styles</h3>
+                @if (!ctx.sectors.length) {
+                  <p class="muted">Select a component to inspect its styles.</p>
+                }
+                @for (sector of ctx.sectors; track sector.cid) {
+                  <details open>
+                    <summary>{{ sector.getName() }}</summary>
+                    <ul class="property-list">
+                      @for (prop of sector.getProperties(); track prop.cid) {
+                        <li>
+                          <span>{{ prop.getName() }}</span>:
+                          <code>{{ prop.getValue() ?? '—' }}</code>
+                        </li>
+                      }
+                    </ul>
+                  </details>
+                }
+              </section>
+            </ng-template>
+          </gjs-styles-provider>
+
+          <gjs-traits-provider>
+            <ng-template let-ctx>
+              <section class="panel">
+                <h3>Traits</h3>
+                @if (!ctx.traits.length) {
+                  <p class="muted">Select a component to edit its traits.</p>
+                }
+                @for (trait of ctx.traits; track trait.cid) {
+                  <label class="trait">
+                    <span>{{ trait.getLabel() }}</span>
+                    <input
+                      [value]="trait.getValue() ?? ''"
+                      (input)="trait.setValue($any($event.target).value)">
+                  </label>
+                }
+              </section>
+            </ng-template>
+          </gjs-traits-provider>
+        </aside>
+      </div>
+
+      <gjs-assets-provider>
+        <ng-template let-ctx>
+          @if (ctx.open) {
+            <div class="overlay" (click)="ctx.close()">
+              <div class="overlay-card" (click)="$event.stopPropagation()">
+                <header>
+                  <h3>Assets</h3>
+                  <button (click)="ctx.close()">×</button>
+                </header>
+                @if (!ctx.assets.length) {
+                  <p class="muted">No assets yet.</p>
+                }
+                <div class="asset-grid">
+                  @for (asset of ctx.assets; track asset.getSrc()) {
+                    <button class="asset-tile" (click)="ctx.select(asset, true)">
+                      <img [src]="asset.getSrc()" alt="">
+                    </button>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        </ng-template>
+      </gjs-assets-provider>
+
+      <gjs-modal-provider>
+        <ng-template let-ctx>
+          @if (ctx.open) {
+            <div class="overlay" (click)="ctx.close()">
+              <div class="overlay-card" (click)="$event.stopPropagation()">
+                <header>
+                  <h3>
+                    @if (isNode(ctx.title)) {
+                      <span [gjsContainer]="$any(ctx.title)"></span>
+                    } @else {
+                      {{ ctx.title }}
+                    }
+                  </h3>
+                  <button (click)="ctx.close()">×</button>
+                </header>
+                <div class="modal-body">
+                  @if (isNode(ctx.content)) {
+                    <div [gjsContainer]="$any(ctx.content)"></div>
+                  } @else {
+                    {{ ctx.content }}
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        </ng-template>
+      </gjs-modal-provider>
+    </gjs-editor>
+  }
 </div>
+
+<ng-template #layerNode let-c>
+  <div class="layer">
+    <button class="layer-row" (click)="selectLayer(c)">
+      {{ c.getName() || 'Component' }}
+    </button>
+    @if (c.components()?.length) {
+      <div class="layer-children">
+        @for (child of c.components(); track child.getId()) {
+          <ng-container
+            *ngTemplateOutlet="layerNode; context: { $implicit: child }">
+          </ng-container>
+        }
+      </div>
+    }
+  </div>
+</ng-template>
 
 @if (htmlOutput()) {
   <pre class="html-output">{{ htmlOutput() }}</pre>
+}
+
+@if (dragging() && draggedLabel(); as label) {
+  <div
+    class="drag-ghost"
+    [style.left.px]="cursorX() + 12"
+    [style.top.px]="cursorY() + 12">
+    {{ label }}
+  </div>
 }
