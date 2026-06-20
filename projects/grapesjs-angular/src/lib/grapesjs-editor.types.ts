@@ -1,5 +1,7 @@
 import type { EditorConfig, Editor, ProjectData, Component, Block, Plugin } from 'grapesjs';
 
+export type { PluginToLoad, PluginTypeToLoad, GrapesPlugin } from './utils/plugins';
+
 /** Config passed to grapesjs.init() — re-exported with `container` made optional
  * since the component sets it from the ViewChild */
 export type GrapesJsConfig = Omit<EditorConfig, 'container'> & {
