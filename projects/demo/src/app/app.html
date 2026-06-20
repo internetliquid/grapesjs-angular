@@ -317,8 +317,9 @@
 @if (dragging() && draggedLabel(); as label) {
   <div
     class="drag-ghost"
-    [style.left.px]="cursorX() + 12"
-    [style.top.px]="cursorY() + 12">
+    [style.left.px]="cursorX() + 14"
+    [style.top.px]="cursorY() + 14">
+    <span class="drag-ghost-ico" [innerHTML]="draggedIcon()"></span>
     {{ label }}
   </div>
 }

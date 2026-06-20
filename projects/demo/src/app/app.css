@@ -620,16 +620,30 @@ select.ctl {
   position: fixed;
   z-index: 9999;
   pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 7px;
   background: var(--accent);
   color: var(--accent-ink);
-  padding: 6px 12px;
-  border-radius: var(--r1);
-  font-size: 11px;
+  padding: 7px 12px;
+  border-radius: var(--r2);
+  font-size: 11.5px;
   font-weight: 560;
   letter-spacing: 0.02em;
   box-shadow: var(--shadow-pop);
   white-space: nowrap;
   user-select: none;
+}
+
+.drag-ghost-ico {
+  display: grid;
+  place-items: center;
+}
+
+.drag-ghost-ico svg {
+  width: 15px;
+  height: 15px;
+  display: block;
 }
 
 /* ---------- floating overlays (Assets, Modal) ---------- */

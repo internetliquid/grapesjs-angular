@@ -56,6 +56,7 @@ export class App {
   protected customUi = signal(false);
   protected dragging = signal(false);
   protected draggedLabel = signal<string | null>(null);
+  protected draggedIcon = signal<SafeHtml | null>(null);
   protected cursorX = signal(0);
   protected cursorY = signal(0);
 
@@ -94,16 +95,25 @@ export class App {
     this.frameEl = editor.Canvas.getFrameEl() ?? null;
 
     editor.on('block:drag:start', () => this.dragging.set(true));
-    editor.on('block:drag:stop', (component?: GjsComponent) => {
-      this.dragging.set(false);
-      this.draggedLabel.set(null);
-      document.removeEventListener('mousemove', this.trackCursor);
-      this.frameDoc?.removeEventListener('mousemove', this.trackCursorInFrame);
-      this.frameDoc = null;
-      // Auto-select the dropped element so its styles/traits populate without
-      // a second click. `component` is undefined when the drop was cancelled.
-      if (component) editor.select(component);
+    // In custom-UI mode the block drag ends via the sorter — `block:drag:stop`
+    // does NOT fire here — so clean up on `sorter:drag:end` instead.
+    editor.on('sorter:drag:end', () => this.endBlockDrag());
+    // Auto-select whatever the drag just added, so its styles/traits populate
+    // without a second click. This fires before sorter:drag:end (while the drag
+    // is still flagged), and is a no-op for non-drag additions (e.g. seeding).
+    editor.on('component:add', (component: GjsComponent) => {
+      if (this.dragging()) editor.select(component);
     });
+  }
+
+  /** Reset all drag state. Called on sorter:drag:end (drop or cancel). */
+  private endBlockDrag(): void {
+    this.dragging.set(false);
+    this.draggedLabel.set(null);
+    this.draggedIcon.set(null);
+    document.removeEventListener('mousemove', this.trackCursor);
+    this.frameDoc?.removeEventListener('mousemove', this.trackCursorInFrame);
+    this.frameDoc = null;
   }
 
   /** Block-button mousedown wrapper: capture the label for the floating ghost,
@@ -112,6 +122,7 @@ export class App {
    *  into the iframe), then forward to GrapesJS via the provider. */
   startBlockDrag(block: Block, ev: MouseEvent, dragStart: (b: Block, e?: Event) => void): void {
     this.draggedLabel.set(block.getLabel());
+    this.draggedIcon.set(this.blockIcon(block));
     this.cursorX.set(ev.clientX);
     this.cursorY.set(ev.clientY);
     document.addEventListener('mousemove', this.trackCursor);
