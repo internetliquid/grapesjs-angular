@@ -1,5 +1,68 @@
 @import 'grapesjs/dist/css/grapes.min.css';
 
+/* ============================================================
+   DESIGN TOKENS — one system drives the toolbar, both custom
+   rails, the HTML export output, and the GrapesJS default-mode
+   panels (themed further down). Defined after the grapes import
+   so our values win. Light is the default; [data-theme="dark"]
+   on <html> swaps the palette.
+   ============================================================ */
+:root {
+  /* surfaces */
+  --app-bg:    oklch(95.5% 0.005 250);   /* canvas backdrop */
+  --panel:     oklch(99.2% 0.002 250);   /* toolbar + rails */
+  --panel-2:   oklch(97% 0.004 250);     /* insets, tiles, inputs */
+  --panel-3:   oklch(94.2% 0.006 250);   /* hover */
+  /* text */
+  --fg:        oklch(26% 0.02 255);
+  --fg-2:      oklch(47% 0.016 255);     /* muted */
+  --fg-3:      oklch(60% 0.012 255);     /* faint / captions */
+  /* lines */
+  --border:    oklch(89% 0.007 255);
+  --border-2:  oklch(83% 0.009 255);
+  /* accent — GrapesJS "grape" violet; the ONE brand signal */
+  --accent:        oklch(52% 0.17 300);  /* fill (primary button) */
+  --accent-strong: oklch(47% 0.16 300);  /* accent text/icons on light */
+  --accent-ink:    oklch(99% 0.01 300);  /* text on accent fill */
+  --accent-wash:   color-mix(in oklab, var(--accent) 14%, transparent);
+  /* canvas selection — deliberately a DIFFERENT hue from accent */
+  --select:      oklch(60% 0.17 250);
+  --select-wash: color-mix(in oklab, var(--select) 12%, transparent);
+  /* status */
+  --success:   oklch(58% 0.13 155);
+  --warn:      oklch(66% 0.15 52);
+  --danger:    oklch(57% 0.19 25);
+  /* effects */
+  --shadow-pop: 0 12px 32px oklch(20% 0.03 255 / .18), 0 2px 6px oklch(20% 0.03 255 / .12);
+  /* type */
+  --font-ui:   'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  /* radii */
+  --r1: 6px; --r2: 8px; --r3: 10px; --r4: 14px;
+}
+
+html[data-theme="dark"] {
+  --app-bg:    oklch(16.5% 0.012 260);
+  --panel:     oklch(21.5% 0.013 260);
+  --panel-2:   oklch(25.5% 0.013 260);
+  --panel-3:   oklch(30% 0.015 260);
+  --fg:        oklch(93% 0.01 250);
+  --fg-2:      oklch(71% 0.014 250);
+  --fg-3:      oklch(56% 0.014 250);
+  --border:    oklch(30% 0.014 260);
+  --border-2:  oklch(38% 0.016 260);
+  --accent:        oklch(72% 0.16 300);
+  --accent-strong: oklch(78% 0.15 300);
+  --accent-ink:    oklch(22% 0.05 300);
+  --accent-wash:   color-mix(in oklab, var(--accent) 18%, transparent);
+  --select:      oklch(70% 0.15 250);
+  --select-wash: color-mix(in oklab, var(--select) 18%, transparent);
+  --success:   oklch(72% 0.14 155);
+  --warn:      oklch(76% 0.15 62);
+  --danger:    oklch(68% 0.17 25);
+  --shadow-pop: 0 16px 40px oklch(0% 0 0 / .5), 0 2px 8px oklch(0% 0 0 / .4);
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
 }
@@ -9,6 +72,14 @@ html, body {
   padding: 0;
   height: 100%;
   overflow: hidden;
+  background: var(--app-bg);
+  color: var(--fg);
+}
+
+body {
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Pin <demo-root> to the viewport regardless of body or ancestor sizing —
