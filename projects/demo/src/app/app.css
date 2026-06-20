@@ -1,51 +1,163 @@
+/* ============================================================
+   Demo editor chrome — consumes the global design tokens from
+   styles.css (one system: toolbar + both custom rails + export
+   output, themed light/dark). Zero hardcoded colours here; the
+   GrapesJS default-mode panels are themed in global styles.css.
+   ============================================================ */
+
+/* ---------- shared icon + control primitives ---------- */
+.ico {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.btn,
+.icon-btn,
+.toggle {
+  font-family: var(--font-ui);
+}
+
+:where(.btn, .icon-btn, .toggle, .device-select, .state-select, .trait input):focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-wash);
+}
+
+/* ============================================================ TOOLBAR */
 .toolbar {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px;
-  background: #333;
+  gap: 6px;
+  height: 53px;
+  padding: 0 14px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
 }
 
-.toolbar button {
-  padding: 6px 16px;
-  background: #555;
-  color: #fff;
-  border: 1px solid #666;
-  border-radius: 4px;
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 14px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  color: var(--fg);
+  font-size: 12.5px;
+  font-weight: 510;
+  letter-spacing: 0.01em;
   cursor: pointer;
-  font-size: 14px;
+  white-space: nowrap;
+  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease, transform 0.04s ease;
+}
+.btn:hover {
+  background: var(--panel-3);
+  border-color: var(--border-2);
+}
+.btn:active {
+  transform: translateY(1px);
 }
 
-.toolbar button:hover {
-  background: #666;
+/* primary = the export action */
+.btn-primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: transparent;
+  box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.25);
+}
+.btn-primary:hover {
+  background: color-mix(in oklab, var(--accent) 88%, black);
+  border-color: transparent;
 }
 
-.toolbar .device-select {
-  margin-left: 8px;
-  padding: 6px 10px;
-  background: #444;
-  color: #fff;
-  border: 1px solid #555;
-  border-radius: 4px;
-  font-size: 13px;
+/* quiet / ghost (Reset), turns destructive on hover */
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--fg-2);
+}
+.btn-ghost:hover {
+  background: var(--panel-2);
+  border-color: transparent;
+}
+.btn-ghost.btn-danger:hover {
+  color: var(--danger);
 }
 
-.toolbar button.toggle {
+/* 32x32 icon button (theme toggle) */
+.icon-btn {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r2);
+  color: var(--fg-2);
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+.icon-btn:hover {
+  background: var(--panel-2);
+  color: var(--fg);
+}
+
+/* Custom/Default switch — neutral, pushed to the right edge */
+.toggle {
   margin-left: auto;
-  background: #276ef1;
-  border-color: #276ef1;
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 14px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  color: var(--fg-2);
+  font-size: 12.5px;
+  font-weight: 510;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+}
+.toggle:hover {
+  background: var(--panel-3);
+  border-color: var(--border-2);
+  color: var(--fg);
 }
 
-.toolbar button.toggle:hover {
-  background: #1e5acc;
+/* device picker (custom mode only) */
+.device-select {
+  height: 32px;
+  padding: 0 28px 0 10px;
+  background-color: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 9px center;
 }
 
+/* ============================================================ LAYOUT */
 .editor-container {
   /* Grid track from <demo-root> gives this a real pixel height; turning it
      into a flex column lets the inner gjs-editor stretch reliably. */
   display: flex;
   min-height: 0;
   overflow: hidden;
+  background: var(--app-bg);
 }
 
 .editor-container > gjs-editor {
@@ -55,7 +167,6 @@
 }
 
 /* ───── Custom UI mode ───── */
-
 .custom-ui-editor {
   display: block;
   height: 100%;
@@ -69,26 +180,26 @@
 
 .custom-sidebar {
   width: 280px;
-  background: #1e1e1e;
-  color: #eee;
+  background: var(--panel);
+  color: var(--fg);
   overflow-y: auto;
-  padding: 12px;
+  padding: 0;
   display: flex;
   flex-direction: column;
   gap: 0;
 }
 
 .custom-sidebar-left {
-  border-right: 1px solid #2b2b2b;
+  border-right: 1px solid var(--border);
 }
 
 .custom-sidebar-right {
-  border-left: 1px solid #2b2b2b;
+  border-left: 1px solid var(--border);
 }
 
 .custom-sidebar .panel {
-  padding: 12px 0;
-  border-bottom: 1px solid #2b2b2b;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
 }
 
 .custom-sidebar .panel:last-child {
@@ -96,221 +207,303 @@
 }
 
 .custom-sidebar .panel h3 {
-  margin: 0 0 8px;
-  font-size: 13px;
+  margin: 0 0 9px;
+  font-size: 11px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #9aa;
+  letter-spacing: 0.085em;
+  color: var(--fg-2);
 }
 
 .custom-sidebar .panel h4 {
-  margin: 12px 0 4px;
-  font-size: 11px;
+  margin: 11px 0 6px;
+  font-size: 10px;
+  font-weight: 600;
   text-transform: uppercase;
-  color: #778;
+  letter-spacing: 0.08em;
+  color: var(--fg-3);
 }
 
-.custom-sidebar .panel .muted {
-  color: #888;
-  font-size: 12px;
-  margin: 0 0 8px;
+.custom-sidebar .muted {
+  color: var(--fg-3);
+  font-size: 11.5px;
+  line-height: 1.45;
+  margin: 0 0 9px;
 }
 
-.custom-sidebar .panel ul {
+/* page list (interactive) — scoped so it never touches .property-list */
+.custom-sidebar .panel ul:not(.property-list) {
   list-style: none;
   padding: 0;
-  margin: 0 0 8px;
+  margin: 0 0 9px;
 }
 
-.custom-sidebar .panel li {
-  padding: 6px 8px;
-  border-radius: 4px;
+.custom-sidebar .panel ul:not(.property-list) li {
+  position: relative;
+  padding: 7px 9px;
+  border-radius: var(--r2);
   cursor: pointer;
-  font-size: 13px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--fg-2);
+  transition: background 0.12s ease, color 0.12s ease;
 }
 
-.custom-sidebar .panel li.active,
-.custom-sidebar .panel li:hover {
-  background: #2a2a2a;
+.custom-sidebar .panel ul:not(.property-list) li:hover {
+  background: var(--panel-2);
+  color: var(--fg);
 }
 
+.custom-sidebar .panel ul:not(.property-list) li.active {
+  background: var(--panel-2);
+  color: var(--fg);
+}
+
+.custom-sidebar .panel ul:not(.property-list) li.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 2.5px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+/* blocks */
 .custom-sidebar .block-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 6px;
+  gap: 7px;
 }
 
 .custom-sidebar .block {
-  background: #2a2a2a;
-  color: #ddd;
-  border: 1px solid #3a3a3a;
-  border-radius: 4px;
-  padding: 12px 8px;
-  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--panel-2);
+  color: var(--fg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  padding: 14px 8px;
+  font-size: 11.5px;
+  font-weight: 500;
   cursor: grab;
-  transition: transform .05s ease, box-shadow .1s ease;
+  user-select: none;
+  transition: transform 0.08s ease, box-shadow 0.12s ease, border-color 0.12s ease, background 0.12s ease;
 }
 
 .custom-sidebar .block:hover {
-  background: #333;
+  background: var(--panel-3);
+  border-color: var(--border-2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px oklch(0% 0 0 / 0.06);
 }
 
 .custom-sidebar .block:active {
   cursor: grabbing;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  transform: translateY(0);
 }
 
-.custom-sidebar .panel button {
-  background: #2a2a2a;
-  color: #ddd;
-  border: 1px solid #3a3a3a;
-  border-radius: 4px;
-  padding: 6px 10px;
+/* secondary buttons inside panels (e.g. "+ Page") — direct children only,
+   so block tiles (nested under .category) keep their own styling */
+.custom-sidebar .panel > button {
+  height: 30px;
+  padding: 0 12px;
+  background: var(--panel-2);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
   cursor: pointer;
   font-size: 12px;
+  font-weight: 510;
+  transition: background 0.12s ease, border-color 0.12s ease;
 }
 
-.custom-sidebar .panel button:hover {
-  background: #333;
+.custom-sidebar .panel > button:hover {
+  background: var(--panel-3);
+  border-color: var(--border-2);
 }
 
-/* Layer tree */
+/* layer tree */
 .layer .layer-row {
   display: block;
   width: 100%;
   text-align: left;
   background: transparent;
   border: 0;
-  color: #ddd;
-  padding: 4px 6px;
-  font-size: 12px;
-  border-radius: 3px;
+  color: var(--fg-2);
+  padding: 5px 8px;
+  font-size: 12.5px;
+  border-radius: var(--r1);
   cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
 }
 
 .layer .layer-row:hover {
-  background: #2a2a2a;
+  background: var(--panel-2);
+  color: var(--fg);
+}
+
+.layer .layer-row.active {
+  background: var(--select-wash);
+  color: var(--fg);
 }
 
 .layer-children {
-  margin-left: 12px;
-  border-left: 1px solid #2b2b2b;
+  margin-left: 11px;
+  border-left: 1px solid var(--border);
   padding-left: 4px;
 }
 
-/* Selectors chips */
+/* selector chips */
 .chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
-  margin: 0 0 8px;
+  gap: 5px;
+  margin: 0 0 9px;
 }
 
 .chip {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  background: #2a2a2a;
-  border: 1px solid #3a3a3a;
-  color: #ddd;
+  gap: 5px;
+  background: var(--accent-wash);
+  border: 1px solid color-mix(in oklab, var(--accent) 35%, transparent);
+  color: var(--accent-strong);
   border-radius: 999px;
-  padding: 2px 4px 2px 8px;
+  padding: 3px 5px 3px 9px;
+  font-family: var(--font-mono);
   font-size: 11px;
 }
 
 .chip button {
   background: transparent;
   border: 0;
-  color: #aaa;
+  color: inherit;
   cursor: pointer;
   font-size: 12px;
   line-height: 1;
-  padding: 0 4px;
+  padding: 0 2px;
+  opacity: 0.7;
 }
 
 .chip button:hover {
-  color: #fff;
+  opacity: 1;
+}
+
+/* form controls: state select + trait inputs share one .ctl-like look */
+.state-select,
+.trait input {
+  width: 100%;
+  height: 30px;
+  background: var(--panel-2);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  padding: 0 9px;
+  font-size: 12.5px;
+  font-family: var(--font-ui);
 }
 
 .state-select {
-  width: 100%;
-  background: #2a2a2a;
-  color: #ddd;
-  border: 1px solid #3a3a3a;
-  border-radius: 4px;
-  padding: 4px 6px;
-  font-size: 12px;
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 28px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 9px center;
 }
 
-/* Styles list */
-.property-list {
-  margin: 6px 0 0 0 !important;
-  padding-left: 12px !important;
-  list-style: disc !important;
-}
-
-.property-list li {
-  padding: 2px 0 !important;
-  cursor: default !important;
-  font-size: 11px !important;
-  background: transparent !important;
-}
-
-.property-list code {
-  background: #141414;
-  padding: 1px 4px;
-  border-radius: 3px;
-  font-size: 10px;
-  color: #9cd;
-}
-
+/* styles list (read-only) — scoped, no !important needed */
 .custom-sidebar details {
-  margin-bottom: 6px;
+  border-top: 1px solid var(--border);
+}
+
+.custom-sidebar details:first-of-type {
+  border-top: 0;
 }
 
 .custom-sidebar details summary {
+  list-style: none;
   cursor: pointer;
-  font-size: 12px;
-  color: #ccc;
-  padding: 2px 0;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--fg-2);
+  padding: 9px 0;
 }
 
-/* Traits inputs */
+.custom-sidebar details summary::-webkit-details-marker {
+  display: none;
+}
+
+.custom-sidebar .property-list {
+  margin: 2px 0 8px;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-mono);
+}
+
+.custom-sidebar .property-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 5px 0;
+  font-size: 11.5px;
+  border-bottom: 1px dotted var(--border);
+}
+
+.custom-sidebar .property-list li:last-child {
+  border-bottom: 0;
+}
+
+.custom-sidebar .property-list li span {
+  color: var(--fg-2);
+}
+
+.custom-sidebar .property-list code {
+  background: var(--panel-2);
+  color: var(--accent-strong);
+  padding: 1px 5px;
+  border-radius: var(--r1);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+/* traits */
 .trait {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  margin-bottom: 8px;
+  gap: 6px;
+  margin-bottom: 11px;
 }
 
 .trait span {
-  font-size: 11px;
-  color: #9aa;
+  font-size: 10.5px;
+  font-weight: 560;
+  color: var(--fg-3);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.07em;
 }
 
-.trait input {
-  background: #2a2a2a;
-  color: #ddd;
-  border: 1px solid #3a3a3a;
-  border-radius: 4px;
-  padding: 5px 8px;
-  font-size: 12px;
-}
-
-.trait input:focus {
+.trait input:focus,
+.state-select:focus,
+.device-select:focus {
   outline: none;
-  border-color: #276ef1;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-wash);
 }
 
-/* Canvas + drag indicator */
+/* ---------- canvas + drag indicator ---------- */
 .canvas-wrap {
   position: relative;
   flex: 1;
   min-width: 0;
   display: flex;
+  background: var(--app-bg);
 }
 
 .custom-canvas {
@@ -332,25 +525,27 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: border-color .12s ease, background-color .12s ease;
+  transition: border-color 0.12s ease, background-color 0.12s ease;
 }
 
 .drop-indicator .drop-hint {
-  background: #276ef1;
-  color: #fff;
+  background: var(--accent);
+  color: var(--accent-ink);
   border-radius: 999px;
   padding: 6px 14px;
-  font-size: 13px;
-  letter-spacing: 0.04em;
+  font-size: 11px;
+  font-weight: 560;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
   opacity: 0;
   transform: translateY(-4px);
-  transition: opacity .12s ease, transform .12s ease;
+  transition: opacity 0.12s ease, transform 0.12s ease;
+  box-shadow: var(--shadow-pop);
 }
 
 .custom-layout.is-dragging .drop-indicator {
-  border-color: #276ef1;
-  background-color: rgba(39, 110, 241, 0.06);
+  border-color: var(--accent);
+  background-color: var(--accent-wash);
 }
 
 .custom-layout.is-dragging .drop-indicator .drop-hint {
@@ -379,23 +574,23 @@
   position: fixed;
   z-index: 9999;
   pointer-events: none;
-  background: #276ef1;
-  color: #fff;
+  background: var(--accent);
+  color: var(--accent-ink);
   padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
+  border-radius: var(--r1);
+  font-size: 11px;
+  font-weight: 560;
   letter-spacing: 0.02em;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--shadow-pop);
   white-space: nowrap;
   user-select: none;
 }
 
-/* Floating overlays (Assets, Modal) */
+/* ---------- floating overlays (Assets, Modal) ---------- */
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: oklch(0% 0 0 / 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -403,14 +598,15 @@
 }
 
 .overlay-card {
-  background: #1e1e1e;
-  color: #eee;
-  border-radius: 6px;
+  background: var(--panel);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: var(--r3);
   width: 90%;
   max-width: 720px;
   max-height: 80vh;
   overflow: auto;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-pop);
   display: flex;
   flex-direction: column;
 }
@@ -420,21 +616,22 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  border-bottom: 1px solid #2b2b2b;
+  border-bottom: 1px solid var(--border);
 }
 
 .overlay-card header h3 {
   margin: 0;
-  font-size: 14px;
+  font-size: 11px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #9aa;
+  letter-spacing: 0.085em;
+  color: var(--fg-2);
 }
 
 .overlay-card header button {
   background: transparent;
   border: 0;
-  color: #aaa;
+  color: var(--fg-3);
   font-size: 20px;
   line-height: 1;
   cursor: pointer;
@@ -442,7 +639,7 @@
 }
 
 .overlay-card header button:hover {
-  color: #fff;
+  color: var(--fg);
 }
 
 .overlay-card .modal-body,
@@ -458,12 +655,13 @@
 
 .asset-tile {
   aspect-ratio: 1;
-  background: #2a2a2a;
-  border: 1px solid #3a3a3a;
-  border-radius: 4px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
   padding: 0;
   cursor: pointer;
   overflow: hidden;
+  transition: border-color 0.12s ease;
 }
 
 .asset-tile img {
@@ -474,16 +672,39 @@
 }
 
 .asset-tile:hover {
-  border-color: #276ef1;
+  border-color: var(--accent);
 }
 
-/* HTML preview output */
+/* ---------- HTML export output ---------- */
 .html-output {
   margin: 0;
-  padding: 12px;
-  background: #1a1a1a;
-  color: #0f0;
+  padding: 14px 16px;
+  background: var(--panel-2);
+  color: var(--fg-2);
+  border-top: 1px solid var(--border);
+  font-family: var(--font-mono);
   font-size: 12px;
-  max-height: 200px;
+  line-height: 1.6;
+  max-height: 230px;
   overflow: auto;
+}
+
+/* ---------- a11y: respect reduced-motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .icon-btn,
+  .toggle,
+  .custom-sidebar .block,
+  .layer .layer-row,
+  .drop-indicator,
+  .drop-indicator .drop-hint,
+  .asset-tile {
+    transition: none;
+  }
+  .btn:active {
+    transform: none;
+  }
+  .custom-sidebar .block:hover {
+    transform: none;
+  }
 }

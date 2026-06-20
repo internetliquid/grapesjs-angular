@@ -1,7 +1,7 @@
 <div class="toolbar">
-  <button (click)="save()">Save</button>
-  <button (click)="getHtml()">Get HTML</button>
-  <button (click)="reset()">Reset</button>
+  <button class="btn" (click)="save()">Save</button>
+  <button class="btn btn-primary" (click)="getHtml()">Get HTML</button>
+  <button class="btn btn-ghost btn-danger" (click)="reset()">Reset</button>
   @if (customUi()) {
     <gjs-devices-provider>
       <ng-template let-ctx>
