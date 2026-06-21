@@ -497,13 +497,89 @@ select.ctl {
   letter-spacing: 0.06em;
 }
 
-/* read-only value for composite/stack properties (shorthands we don't edit) */
-.style-ro {
+/* range slider + value readout (font-size, line-height, spacing) */
+.range {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.range input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--border-2);
+  cursor: pointer;
+}
+.range input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 999px;
+  background: var(--accent);
+  border: 2px solid var(--panel);
+  box-shadow: 0 1px 3px oklch(0% 0 0 / 0.25);
+  cursor: pointer;
+}
+.range input[type='range']::-moz-range-thumb {
+  width: 13px;
+  height: 13px;
+  border-radius: 999px;
+  background: var(--accent);
+  border: 2px solid var(--panel);
+  cursor: pointer;
+}
+.range-val {
   font-family: var(--font-mono);
   font-size: 11.5px;
   color: var(--fg-2);
-  padding: 5px 0 1px;
-  word-break: break-all;
+  min-width: 48px;
+  text-align: right;
+}
+
+/* colour swatch + value readout */
+.swatch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 4px 9px 4px 5px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+}
+.swatch input[type='color'] {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  padding: 0;
+  border: 1px solid var(--border-2);
+  border-radius: 5px;
+  background: none;
+  cursor: pointer;
+}
+.swatch input[type='color']::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+.swatch input[type='color']::-webkit-color-swatch {
+  border: 0;
+  border-radius: 4px;
+}
+.swatch-val {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--fg-2);
+  text-transform: uppercase;
+}
+
+/* segmented control filling the field width (text-align) */
+.seg-fill {
+  width: 100%;
+}
+.seg-fill button {
+  flex: 1;
+  min-width: 0;
 }
 
 /* selector targets readout */

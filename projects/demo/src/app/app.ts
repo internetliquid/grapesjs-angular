@@ -15,8 +15,9 @@ import {
   GjsAssetsProvider,
   GjsModalProvider,
   GjsContainerDirective,
+  type GrapesJsConfig,
 } from 'grapesjs-angular';
-import type { Block, Component as GjsComponent, Editor, ProjectData } from 'grapesjs';
+import type { Block, Component as GjsComponent, Editor, ProjectData, Property } from 'grapesjs';
 import { SAMPLE_HTML, SAMPLE_CSS } from './sample-content';
 
 @Component({
@@ -52,6 +53,61 @@ export class App {
    *  Drives the inspector's empty state. */
   protected selectedComponent = this.editorService.selectedComponent;
   protected theme = signal<'light' | 'dark'>('light');
+
+  /** Curated style manager so the inspector renders differentiated, typed
+   *  controls (sliders / colour swatches / segmented / selects) instead of a
+   *  wall of identical inputs. Drives both custom and default UI. */
+  protected gjsConfig: GrapesJsConfig = {
+    styleManager: {
+      sectors: [
+        {
+          name: 'Typography',
+          open: true,
+          properties: [
+            { property: 'font-size', type: 'slider', units: ['px'], min: 8, max: 96 },
+            {
+              property: 'font-weight',
+              type: 'select',
+              default: '400',
+              options: [
+                { id: '300', label: 'Light' },
+                { id: '400', label: 'Regular' },
+                { id: '500', label: 'Medium' },
+                { id: '600', label: 'Semibold' },
+                { id: '700', label: 'Bold' },
+              ],
+            },
+            { property: 'color', type: 'color' },
+            { property: 'line-height', type: 'slider', units: [''], min: 0.8, max: 3, step: 0.1 },
+            {
+              property: 'text-align',
+              type: 'radio',
+              default: 'left',
+              options: [
+                { id: 'left', label: 'Left' },
+                { id: 'center', label: 'Center' },
+                { id: 'right', label: 'Right' },
+                { id: 'justify', label: 'Justify' },
+              ],
+            },
+          ],
+        },
+        {
+          name: 'Background',
+          open: true,
+          properties: [{ property: 'background-color', type: 'color' }],
+        },
+        {
+          name: 'Spacing',
+          open: true,
+          properties: [
+            { property: 'padding', type: 'slider', units: ['px'], min: 0, max: 120 },
+            { property: 'margin', type: 'slider', units: ['px'], min: 0, max: 120 },
+          ],
+        },
+      ],
+    },
+  };
   protected htmlOutput = signal('');
   protected customUi = signal(false);
   protected dragging = signal(false);
@@ -189,6 +245,47 @@ export class App {
    *  GrapesJS's own layer manager, which hides them. */
   layerChildren(c: GjsComponent): GjsComponent[] {
     return c.components().filter((child: GjsComponent) => child.get('layerable') !== false);
+  }
+
+  // ── Style-inspector control helpers (wrap GrapesJS's dynamic Property API) ──
+
+  /** Numeric part of a slider property's value, for the range input. */
+  sliderValue(prop: Property): number {
+    return parseFloat(String(prop.getValue() ?? '')) || 0;
+  }
+
+  /** A slider property's min/max/step (from the curated config). */
+  sliderAttr(prop: Property, key: 'min' | 'max' | 'step'): number {
+    const v = (prop as unknown as { get(k: string): unknown }).get(key);
+    return typeof v === 'number' ? v : key === 'max' ? 100 : key === 'step' ? 1 : 0;
+  }
+
+  /** Apply a slider value back to the property, re-attaching its unit. */
+  setSlider(prop: Property, raw: string): void {
+    const p = prop as unknown as { getUnit?(): string; get(k: string): unknown };
+    const units = p.get('units');
+    const unit = p.getUnit?.() || (Array.isArray(units) ? (units[0] as string) : '') || '';
+    prop.upValue(raw + unit);
+  }
+
+  /** Convert a property's colour value to a hex the `<input type=color>` accepts. */
+  colorHex(prop: Property): string {
+    const v = String(prop.getValue() ?? '');
+    if (v[0] === '#') return v.length === 4 ? `#${v[1]}${v[1]}${v[2]}${v[2]}${v[3]}${v[3]}` : v.slice(0, 7);
+    const m = v.match(/\d+/g);
+    if (m && m.length >= 3) return '#' + m.slice(0, 3).map((n) => (+n).toString(16).padStart(2, '0')).join('');
+    return '#000000';
+  }
+
+  /** Options / labels for select & radio properties (PropertySelect API). */
+  propOptions(prop: Property): unknown[] {
+    return (prop as unknown as { getOptions?(): unknown[] }).getOptions?.() ?? [];
+  }
+  optionId(prop: Property, opt: unknown): string {
+    return (prop as unknown as { getOptionId(o: unknown): string }).getOptionId(opt);
+  }
+  optionLabel(prop: Property, opt: unknown): string {
+    return (prop as unknown as { getOptionLabel(o: unknown): string }).getOptionLabel(opt);
   }
 
   /** The block's icon (its GrapesJS `media` SVG), for the block tiles. */

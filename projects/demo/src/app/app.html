@@ -44,6 +44,7 @@
 <div class="editor-container">
   @if (!customUi()) {
     <gjs-editor
+      [config]="gjsConfig"
       (editorReady)="onEditorReady($event)"
       (projectSaved)="onProjectSaved($event)"
       (projectLoaded)="onProjectLoaded($event)">
@@ -51,6 +52,7 @@
   } @else {
     <gjs-editor
       class="custom-ui-editor"
+      [config]="gjsConfig"
       (editorReady)="onEditorReady($event)"
       (projectSaved)="onProjectSaved($event)"
       (projectLoaded)="onProjectLoaded($event)">
@@ -166,28 +168,60 @@
                       <summary>{{ sector.getName() }}</summary>
                       <div class="style-fields">
                         @for (prop of sector.getProperties(); track prop.cid) {
-                          <label class="style-field">
+                          <div class="style-field">
                             <span>{{ prop.getName() }}</span>
-                            @if (prop.getType() === 'select' || prop.getType() === 'radio') {
-                              <select
-                                class="ctl"
-                                [value]="prop.getValue() ?? ''"
-                                (change)="prop.upValue($any($event.target).value)">
-                                @for (opt of $any(prop).getOptions(); track $index) {
-                                  <option [value]="$any(prop).getOptionId(opt)">
-                                    {{ $any(prop).getOptionLabel(opt) }}
-                                  </option>
-                                }
-                              </select>
-                            } @else if (prop.getType() === 'composite' || prop.getType() === 'stack') {
-                              <span class="style-ro">{{ prop.getValue() || '—' }}</span>
-                            } @else {
-                              <input
-                                class="ctl"
-                                [value]="prop.getValue() ?? ''"
-                                (change)="prop.upValue($any($event.target).value)">
+                            @switch (prop.getType()) {
+                              @case ('slider') {
+                                <div class="range">
+                                  <input
+                                    type="range"
+                                    [min]="sliderAttr(prop, 'min')"
+                                    [max]="sliderAttr(prop, 'max')"
+                                    [step]="sliderAttr(prop, 'step')"
+                                    [value]="sliderValue(prop)"
+                                    (input)="setSlider(prop, $any($event.target).value)" />
+                                  <span class="range-val">{{ prop.getValue() || '—' }}</span>
+                                </div>
+                              }
+                              @case ('color') {
+                                <div class="swatch">
+                                  <input
+                                    type="color"
+                                    [value]="colorHex(prop)"
+                                    (input)="prop.upValue($any($event.target).value)" />
+                                  <span class="swatch-val">{{ prop.getValue() || '—' }}</span>
+                                </div>
+                              }
+                              @case ('radio') {
+                                <div class="seg seg-fill">
+                                  @for (opt of propOptions(prop); track $index) {
+                                    <button
+                                      type="button"
+                                      [class.on]="prop.getValue() === optionId(prop, opt)"
+                                      (click)="prop.upValue(optionId(prop, opt))">
+                                      {{ optionLabel(prop, opt) }}
+                                    </button>
+                                  }
+                                </div>
+                              }
+                              @case ('select') {
+                                <select
+                                  class="ctl"
+                                  [value]="prop.getValue() ?? ''"
+                                  (change)="prop.upValue($any($event.target).value)">
+                                  @for (opt of propOptions(prop); track $index) {
+                                    <option [value]="optionId(prop, opt)">{{ optionLabel(prop, opt) }}</option>
+                                  }
+                                </select>
+                              }
+                              @default {
+                                <input
+                                  class="ctl"
+                                  [value]="prop.getValue() ?? ''"
+                                  (change)="prop.upValue($any($event.target).value)" />
+                              }
                             }
-                          </label>
+                          </div>
                         }
                       </div>
                     </details>
