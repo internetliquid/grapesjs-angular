@@ -20,10 +20,10 @@ An Angular wrapper for the [GrapesJS](https://grapesjs.com/) web builder framewo
 
 ## Installation
 
-> **Pre-release:** the newest build ships under the npm `beta` dist-tag. Install with `@beta` to get it — a plain `npm install` currently resolves to an older beta.
+> **Pre-release:** the library is in beta — `npm install` gives you the newest beta (the `latest` tag tracks the most recent release until a stable `1.0`).
 
 ```bash
-npm install @ilq/grapesjs-angular@beta grapesjs
+npm install @ilq/grapesjs-angular grapesjs
 ```
 
 Add the GrapesJS CSS to your project:
