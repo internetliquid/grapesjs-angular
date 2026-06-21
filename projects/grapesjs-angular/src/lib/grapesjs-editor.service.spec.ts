@@ -15,9 +15,13 @@ import grapesjs from 'grapesjs';
 
 function createMockEditor() {
   const eventHandlers = new Map<string, Function>();
+  const readyHandlers: Function[] = [];
   return {
     on: vi.fn((event: string, handler: Function) => {
       eventHandlers.set(event, handler);
+    }),
+    onReady: vi.fn((handler: Function) => {
+      readyHandlers.push(handler);
     }),
     destroy: vi.fn(),
     getHtml: vi.fn(() => '<div>test</div>'),
@@ -37,6 +41,9 @@ function createMockEditor() {
     _fireEvent: (event: string, ...args: unknown[]) => {
       const handler = eventHandlers.get(event);
       if (handler) handler(...args);
+    },
+    _fireReady: () => {
+      readyHandlers.forEach(h => h());
     },
   };
 }
@@ -104,5 +111,23 @@ describe('GrapesJsEditorService', () => {
     const mockComponent = { getId: () => '123' };
     mockEditor._fireEvent('component:selected', mockComponent);
     expect(service.selectedComponent()).toBe(mockComponent);
+  });
+
+  it('isInitialized flips true after init() and back to false after destroy()', () => {
+    expect(service.isInitialized()).toBe(false);
+    service.init({ container: document.createElement('div') });
+    expect(service.isInitialized()).toBe(true);
+    service.destroy();
+    expect(service.isInitialized()).toBe(false);
+  });
+
+  it('isReady flips true when editor.onReady fires and resets on destroy', () => {
+    expect(service.isReady()).toBe(false);
+    service.init({ container: document.createElement('div') });
+    expect(service.isReady()).toBe(false);
+    mockEditor._fireReady();
+    expect(service.isReady()).toBe(true);
+    service.destroy();
+    expect(service.isReady()).toBe(false);
   });
 });

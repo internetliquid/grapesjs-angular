@@ -1,6 +1,6 @@
 {
-  "name": "grapesjs-angular",
-  "version": "0.0.0",
+  "name": "grapesjs-angular-workspace",
+  "version": "0.0.1",
   "scripts": {
     "ng": "ng",
     "build:lib": "ng build grapesjs-angular && cp README.md LICENSE dist/grapesjs-angular/",

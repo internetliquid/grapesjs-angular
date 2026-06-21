@@ -1,17 +1,356 @@
 <div class="toolbar">
-  <button (click)="save()">Save</button>
-  <button (click)="getHtml()">Get HTML</button>
-  <button (click)="reset()">Reset</button>
+  <button class="btn" (click)="save()">Save</button>
+  <button class="btn btn-primary" (click)="getHtml()">Get HTML</button>
+  <button class="btn btn-ghost btn-danger" (click)="reset()">Reset</button>
+  @if (customUi()) {
+    <gjs-devices-provider>
+      <ng-template let-ctx>
+        <select
+          class="device-select"
+          [value]="ctx.selected"
+          (change)="ctx.select($any($event.target).value)">
+          @for (d of ctx.devices; track d.id) {
+            <option [value]="d.id">{{ d.get('name') ?? d.id }}</option>
+          }
+        </select>
+      </ng-template>
+    </gjs-devices-provider>
+  }
+  <div class="seg mode-seg" role="group" aria-label="Editor UI mode">
+    <button type="button" [class.on]="customUi()" (click)="setCustomUi(true)">Custom UI</button>
+    <button type="button" [class.on]="!customUi()" (click)="setCustomUi(false)">Default UI</button>
+  </div>
+
+  <button
+    type="button"
+    class="icon-btn theme-toggle"
+    (click)="toggleTheme()"
+    [title]="theme() === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'"
+    [attr.aria-label]="theme() === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'">
+    @if (theme() === 'dark') {
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+      </svg>
+    } @else {
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="4.5" />
+        <path
+          d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+      </svg>
+    }
+  </button>
 </div>
 
 <div class="editor-container">
-  <gjs-editor
-    (editorReady)="onEditorReady($event)"
-    (projectSaved)="onProjectSaved($event)"
-    (projectLoaded)="onProjectLoaded($event)">
-  </gjs-editor>
+  @if (!customUi()) {
+    <gjs-editor
+      [config]="gjsConfig"
+      (editorReady)="onEditorReady($event)"
+      (projectSaved)="onProjectSaved($event)"
+      (projectLoaded)="onProjectLoaded($event)">
+    </gjs-editor>
+  } @else {
+    <gjs-editor
+      class="custom-ui-editor"
+      [config]="gjsConfig"
+      (editorReady)="onEditorReady($event)"
+      (projectSaved)="onProjectSaved($event)"
+      (projectLoaded)="onProjectLoaded($event)">
+      <div class="custom-layout" [class.is-dragging]="dragging()">
+        <aside class="custom-sidebar custom-sidebar-left">
+          <gjs-pages-provider>
+            <ng-template let-ctx>
+              <section class="panel">
+                <h3>Pages</h3>
+                <ul>
+                  @for (page of ctx.pages; track page.getId(); let i = $index) {
+                    <li
+                      [class.active]="ctx.selected?.getId() === page.getId()"
+                      (click)="ctx.select(page)">
+                      {{ page.get('name') || 'Page ' + (i + 1) }}
+                    </li>
+                  }
+                </ul>
+                <button (click)="ctx.add({ name: 'Page ' + (ctx.pages.length + 1) })">+ Page</button>
+              </section>
+            </ng-template>
+          </gjs-pages-provider>
+
+          <gjs-blocks-provider>
+            <ng-template let-ctx>
+              <section class="panel">
+                <h3>Blocks</h3>
+                <p class="muted">Drag blocks onto the canvas.</p>
+                @for (entry of ctx.mapCategoryBlocks | keyvalue; track entry.key) {
+                  <div class="category">
+                    <h4>{{ entry.key }}</h4>
+                    <div class="block-grid">
+                      @for (block of entry.value; track block.getId()) {
+                        <button
+                          class="block"
+                          [class.is-source]="dragging() && draggedLabel() === block.getLabel()"
+                          (mousedown)="startBlockDrag(block, $event, ctx.dragStart)"
+                          (mouseup)="ctx.dragStop()">
+                          <span class="block-ico" [innerHTML]="blockIcon(block)"></span>
+                          <span class="block-label">{{ block.getLabel() }}</span>
+                        </button>
+                      }
+                    </div>
+                  </div>
+                }
+              </section>
+            </ng-template>
+          </gjs-blocks-provider>
+
+          <gjs-layers-provider>
+            <ng-template let-ctx>
+              <section class="panel">
+                <h3>Layers</h3>
+                @if (ctx.root) {
+                  <ng-container
+                    *ngTemplateOutlet="layerNode; context: { $implicit: ctx.root }">
+                  </ng-container>
+                }
+              </section>
+            </ng-template>
+          </gjs-layers-provider>
+        </aside>
+
+        <div class="canvas-wrap">
+          <gjs-canvas class="custom-canvas"></gjs-canvas>
+        </div>
+
+        <aside class="custom-sidebar custom-sidebar-right">
+          <gjs-selectors-provider>
+            <ng-template let-ctx>
+              <section class="panel">
+                <h3>Selectors</h3>
+                @if (!selectedComponent()) {
+                  <p class="muted">Select an element to edit its selectors and state.</p>
+                } @else {
+                  <div class="targets">{{ ctx.targets.join(' ') || '—' }}</div>
+                  <div class="chips">
+                    @for (s of ctx.selectors; track s.cid) {
+                      <span class="chip">
+                        {{ s.getFullName() }}
+                        <button (click)="ctx.removeSelector(s.getName())" aria-label="Remove selector">×</button>
+                      </span>
+                    }
+                  </div>
+                  <label class="style-field">
+                    <span>State</span>
+                    <select
+                      class="ctl"
+                      [value]="ctx.selectedState"
+                      (change)="ctx.setState($any($event.target).value)">
+                      <option value="">Normal</option>
+                      @for (st of ctx.states; track st.id) {
+                        <option [value]="st.get('name')">
+                          {{ st.get('label') || st.get('name') }}
+                        </option>
+                      }
+                    </select>
+                  </label>
+                }
+              </section>
+            </ng-template>
+          </gjs-selectors-provider>
+
+          <gjs-styles-provider>
+            <ng-template let-ctx>
+              <section class="panel">
+                <h3>Styles</h3>
+                @if (!selectedComponent()) {
+                  <p class="muted">Select an element to edit its styles.</p>
+                } @else {
+                  @for (sector of ctx.sectors; track sector.cid) {
+                    <details open>
+                      <summary>{{ sector.getName() }}</summary>
+                      <div class="style-fields">
+                        @for (prop of sector.getProperties(); track prop.cid) {
+                          <div class="style-field">
+                            <span>{{ prop.getName() }}</span>
+                            @switch (prop.getType()) {
+                              @case ('slider') {
+                                <div class="range">
+                                  <input
+                                    type="range"
+                                    [min]="sliderAttr(prop, 'min')"
+                                    [max]="sliderAttr(prop, 'max')"
+                                    [step]="sliderAttr(prop, 'step')"
+                                    [value]="sliderValue(prop)"
+                                    (input)="setSlider(prop, $any($event.target).value)" />
+                                  <span class="range-val">{{ prop.getValue() || '—' }}</span>
+                                </div>
+                              }
+                              @case ('color') {
+                                <div class="swatch">
+                                  <input
+                                    type="color"
+                                    [value]="colorHex(prop)"
+                                    (input)="prop.upValue($any($event.target).value)" />
+                                  <span class="swatch-val">{{ prop.getValue() || '—' }}</span>
+                                </div>
+                              }
+                              @case ('radio') {
+                                <div class="seg seg-fill">
+                                  @for (opt of propOptions(prop); track $index) {
+                                    <button
+                                      type="button"
+                                      [class.on]="prop.getValue() === optionId(prop, opt)"
+                                      (click)="prop.upValue(optionId(prop, opt))">
+                                      {{ optionLabel(prop, opt) }}
+                                    </button>
+                                  }
+                                </div>
+                              }
+                              @case ('select') {
+                                <select
+                                  class="ctl"
+                                  [value]="prop.getValue() ?? ''"
+                                  (change)="prop.upValue($any($event.target).value)">
+                                  @for (opt of propOptions(prop); track $index) {
+                                    <option [value]="optionId(prop, opt)">{{ optionLabel(prop, opt) }}</option>
+                                  }
+                                </select>
+                              }
+                              @default {
+                                <input
+                                  class="ctl"
+                                  [value]="prop.getValue() ?? ''"
+                                  (change)="prop.upValue($any($event.target).value)" />
+                              }
+                            }
+                          </div>
+                        }
+                      </div>
+                    </details>
+                  }
+                }
+              </section>
+            </ng-template>
+          </gjs-styles-provider>
+
+          <gjs-traits-provider>
+            <ng-template let-ctx>
+              <section class="panel">
+                <h3>Traits</h3>
+                @if (!ctx.traits.length) {
+                  <p class="muted">Select a component to edit its traits.</p>
+                }
+                @for (trait of ctx.traits; track trait.cid) {
+                  <label class="trait">
+                    <span>{{ trait.getLabel() }}</span>
+                    <input
+                      [value]="trait.getValue() ?? ''"
+                      (input)="trait.setValue($any($event.target).value)">
+                  </label>
+                }
+              </section>
+            </ng-template>
+          </gjs-traits-provider>
+        </aside>
+      </div>
+
+      <gjs-assets-provider>
+        <ng-template let-ctx>
+          @if (ctx.open) {
+            <div class="overlay" (click)="ctx.close()">
+              <div class="overlay-card" (click)="$event.stopPropagation()">
+                <header>
+                  <h3>Assets</h3>
+                  <button (click)="ctx.close()">×</button>
+                </header>
+                @if (!ctx.assets.length) {
+                  <p class="muted">No assets yet.</p>
+                }
+                <div class="asset-grid">
+                  @for (asset of ctx.assets; track asset.getSrc()) {
+                    <button class="asset-tile" (click)="ctx.select(asset, true)">
+                      <img [src]="asset.getSrc()" alt="">
+                    </button>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        </ng-template>
+      </gjs-assets-provider>
+
+      <gjs-modal-provider>
+        <ng-template let-ctx>
+          @if (ctx.open) {
+            <div class="overlay" (click)="ctx.close()">
+              <div class="overlay-card" (click)="$event.stopPropagation()">
+                <header>
+                  <h3>
+                    @if (isNode(ctx.title)) {
+                      <span [gjsContainer]="$any(ctx.title)"></span>
+                    } @else {
+                      {{ ctx.title }}
+                    }
+                  </h3>
+                  <button (click)="ctx.close()">×</button>
+                </header>
+                <div class="modal-body">
+                  @if (isNode(ctx.content)) {
+                    <div [gjsContainer]="$any(ctx.content)"></div>
+                  } @else {
+                    {{ ctx.content }}
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        </ng-template>
+      </gjs-modal-provider>
+    </gjs-editor>
+  }
 </div>
 
+<ng-template #layerNode let-c>
+  <div class="layer">
+    <button class="layer-row" (click)="selectLayer(c)">
+      {{ c.getName() || 'Component' }}
+    </button>
+    @if (layerChildren(c).length) {
+      <div class="layer-children">
+        @for (child of layerChildren(c); track child.getId()) {
+          <ng-container
+            *ngTemplateOutlet="layerNode; context: { $implicit: child }">
+          </ng-container>
+        }
+      </div>
+    }
+  </div>
+</ng-template>
+
 @if (htmlOutput()) {
-  <pre class="html-output">{{ htmlOutput() }}</pre>
+  <div class="export-dock">
+    <div class="export-dock-hd">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M16 18l6-6-6-6M8 6l-6 6 6 6" />
+      </svg>
+      <h4>Exported markup</h4>
+      <span class="lang">HTML</span>
+      <span class="sp"></span>
+      <button class="btn" (click)="copyHtml()">Copy</button>
+      <button class="icon-btn" (click)="htmlOutput.set('')" aria-label="Close export">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M18 6L6 18M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+    <pre class="html-output">{{ htmlOutput() }}</pre>
+  </div>
+}
+
+@if (dragging() && draggedLabel(); as label) {
+  <div
+    class="drag-ghost"
+    [style.left.px]="cursorX() + 14"
+    [style.top.px]="cursorY() + 14">
+    <span class="drag-ghost-ico" [innerHTML]="draggedIcon()"></span>
+    {{ label }}
+  </div>
 }

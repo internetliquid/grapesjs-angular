@@ -27,8 +27,13 @@ export class GrapesJsEditorService {
   readonly commands: Signal<ManagerOf<'Commands'> | null>               = computed(() => this._editor()?.Commands        ?? null);
 
   // Convenience signals for common state
-  readonly isReady = computed(() => this._editor() !== null);
+  readonly isInitialized = computed(() => this._editor() !== null);
   readonly selectedComponent = signal<Component | null>(null);
+
+  // Flips true once editor.onReady() has fired (editor mounted and storage loaded).
+  // Distinct from `isInitialized`, which only reports whether init() has been called.
+  private _isReady = signal(false);
+  readonly isReady = this._isReady.asReadonly();
 
   init(config: GrapesJsConfig): Editor {
     if (this._editor()) {
@@ -38,6 +43,7 @@ export class GrapesJsEditorService {
     const editor = grapesjs.init(config);
     editor.on('component:selected', (c: Component) => this.selectedComponent.set(c));
     editor.on('component:deselected', () => this.selectedComponent.set(null));
+    editor.onReady(() => this._isReady.set(true));
     this._editor.set(editor);
     return editor;
   }
@@ -46,6 +52,7 @@ export class GrapesJsEditorService {
     this._editor()?.destroy();
     this._editor.set(null);
     this.selectedComponent.set(null);
+    this._isReady.set(false);
   }
 
   getHtml(): string | null {

@@ -1,7 +1,202 @@
 @import 'grapesjs/dist/css/grapes.min.css';
 
+/* ============================================================
+   DESIGN TOKENS — one system drives the toolbar, both custom
+   rails, the HTML export output, and the GrapesJS default-mode
+   panels (themed further down). Defined after the grapes import
+   so our values win. Light is the default; [data-theme="dark"]
+   on <html> swaps the palette.
+   ============================================================ */
+:root {
+  /* surfaces */
+  --app-bg:    oklch(95.5% 0.005 250);   /* canvas backdrop */
+  --panel:     oklch(99.2% 0.002 250);   /* toolbar + rails */
+  --panel-2:   oklch(97% 0.004 250);     /* insets, tiles, inputs */
+  --panel-3:   oklch(94.2% 0.006 250);   /* hover */
+  /* text */
+  --fg:        oklch(26% 0.02 255);
+  --fg-2:      oklch(47% 0.016 255);     /* muted */
+  --fg-3:      oklch(60% 0.012 255);     /* faint / captions */
+  /* lines */
+  --border:    oklch(89% 0.007 255);
+  --border-2:  oklch(83% 0.009 255);
+  /* accent — GrapesJS "grape" violet; the ONE brand signal */
+  --accent:        oklch(52% 0.17 300);  /* fill (primary button) */
+  --accent-strong: oklch(47% 0.16 300);  /* accent text/icons on light */
+  --accent-ink:    oklch(99% 0.01 300);  /* text on accent fill */
+  --accent-wash:   color-mix(in oklab, var(--accent) 14%, transparent);
+  /* canvas selection — deliberately a DIFFERENT hue from accent */
+  --select:      oklch(60% 0.17 250);
+  --select-wash: color-mix(in oklab, var(--select) 12%, transparent);
+  /* status */
+  --success:   oklch(58% 0.13 155);
+  --warn:      oklch(66% 0.15 52);
+  --danger:    oklch(57% 0.19 25);
+  /* effects */
+  --shadow-pop: 0 12px 32px oklch(20% 0.03 255 / .18), 0 2px 6px oklch(20% 0.03 255 / .12);
+  /* type */
+  --font-ui:   'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  /* radii */
+  --r1: 6px; --r2: 8px; --r3: 10px; --r4: 14px;
+}
+
+html[data-theme="dark"] {
+  --app-bg:    oklch(16.5% 0.012 260);
+  --panel:     oklch(21.5% 0.013 260);
+  --panel-2:   oklch(25.5% 0.013 260);
+  --panel-3:   oklch(30% 0.015 260);
+  --fg:        oklch(93% 0.01 250);
+  --fg-2:      oklch(71% 0.014 250);
+  --fg-3:      oklch(56% 0.014 250);
+  --border:    oklch(30% 0.014 260);
+  --border-2:  oklch(38% 0.016 260);
+  --accent:        oklch(72% 0.16 300);
+  --accent-strong: oklch(78% 0.15 300);
+  --accent-ink:    oklch(22% 0.05 300);
+  --accent-wash:   color-mix(in oklab, var(--accent) 18%, transparent);
+  --select:      oklch(70% 0.15 250);
+  --select-wash: color-mix(in oklab, var(--select) 18%, transparent);
+  --success:   oklch(72% 0.14 155);
+  --warn:      oklch(76% 0.15 62);
+  --danger:    oklch(68% 0.17 25);
+  --shadow-pop: 0 16px 40px oklch(0% 0 0 / .5), 0 2px 8px oklch(0% 0 0 / .4);
+}
+
+/* ============================================================
+   GrapesJS DEFAULT-MODE theming — map the engine's own CSS
+   variables (names verified against the installed grapesjs
+   build) onto our tokens, so flipping Custom <-> Default in
+   either theme reads as one product. These reference our tokens,
+   so they re-resolve automatically when [data-theme] flips.
+   GrapesJS ships a dark theme where *-light-color vars are
+   white-alpha overlays (invisible on a light panel) and
+   *-dark-color vars are black-alpha insets — both are remapped
+   to real surface/text tokens here.
+   ============================================================ */
+:root {
+  --gjs-primary-color: var(--panel);          /* panel backgrounds */
+  --gjs-secondary-color: var(--fg-2);          /* icons / labels */
+  --gjs-tertiary-color: var(--accent);         /* links / active */
+  --gjs-quaternary-color: var(--accent-strong);/* hover / active accent */
+  --gjs-font-color: var(--fg);
+  --gjs-font-color-active: var(--fg);
+  --gjs-main-color: var(--panel);
+  --gjs-main-dark-color: var(--panel-2);       /* inputs, insets */
+  --gjs-secondary-dark-color: var(--panel-2);  /* category titles, layer rows */
+  --gjs-main-light-color: var(--border);       /* was white-alpha highlight */
+  --gjs-secondary-light-color: var(--fg-2);    /* muted text — was invisible on white */
+  --gjs-soft-light-color: var(--panel-2);
+  --gjs-light-border: var(--border);
+  --gjs-arrow-color: var(--fg-2);
+  --gjs-color-highlight: var(--select);        /* canvas selection highlight */
+  --gjs-color-blue: var(--select);
+  --gjs-placeholder-background-color: var(--accent);
+  --gjs-main-font: var(--font-ui);
+  --gjs-font-size: 12px;
+}
+
+/* Overrides for colours GrapesJS hardcodes (baked rgba, not var-driven).
+   Scoped to .gjs-* so they only reach default-mode panels. */
+.gjs-pn-panel,
+.gjs-pn-views,
+.gjs-pn-views-container,
+.gjs-pn-options,
+.gjs-pn-commands {
+  border-color: var(--border) !important;
+}
+.gjs-category-title,
+.gjs-layer-title,
+.gjs-block-category .gjs-title,
+.gjs-sm-sector-title,
+.gjs-trait-category .gjs-title,
+.gjs-clm-tags-field,
+.gjs-sm-sector .gjs-sm-title {
+  border-bottom: 1px solid var(--border);
+  color: var(--fg-2);
+}
+.gjs-layer-item,
+.gjs-block {
+  border-color: var(--border);
+}
+.gjs-sm-sector,
+.gjs-clm-tags,
+.gjs-trt-traits {
+  border-color: var(--border);
+}
+/* form fields: kill the baked black/white-alpha border + shadow */
+.gjs-field,
+.gjs-sm-field,
+.gjs-clm-field,
+.gjs-clm-select,
+.gjs-sm-field input,
+.gjs-field input,
+.gjs-field select {
+  border: 1px solid var(--border) !important;
+  box-shadow: none !important;
+  color: var(--fg);
+}
+/* canvas selection chrome → --select (distinct from accent) */
+.gjs-comp-selected,
+.gjs-comp-selected-parent {
+  outline-color: var(--select) !important;
+}
+.gjs-badge,
+.gjs-toolbar {
+  background-color: var(--select) !important;
+  color: var(--accent-ink) !important;
+}
+.gjs-resizer-h {
+  border-color: var(--select) !important;
+}
+/* drag-drop insertion indicator (sorter placeholder) → a clear accent line at
+   the actual drop point, in both custom and default UI */
+.gjs-placeholder {
+  border-color: var(--accent) !important;
+}
+.gjs-placeholder-int {
+  background-color: var(--accent) !important;
+  border-color: var(--accent) !important;
+}
+/* default-mode device selector — its panel is 44px but the canvas starts at
+   40px (--gjs-canvas-top), so its bottom edge bled into the canvas. Pin the
+   panel to the bar height and center the dropdown within it. */
+.gjs-pn-devices-c {
+  display: flex;
+  align-items: center;
+  height: var(--gjs-canvas-top, 40px);
+  box-sizing: border-box;
+}
+.gjs-pn-devices-c .gjs-devices-c {
+  padding: 0 3px;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 html, body {
   margin: 0;
   padding: 0;
   height: 100%;
+  overflow: hidden;
+  background: var(--app-bg);
+  color: var(--fg);
+}
+
+body {
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Pin <demo-root> to the viewport regardless of body or ancestor sizing —
+   percentage height chains through nested flex/grid have been unreliable
+   here, so fixed positioning is the cheapest definite constraint. */
+demo-root {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
 }
