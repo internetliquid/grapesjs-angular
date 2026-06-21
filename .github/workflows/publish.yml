@@ -7,7 +7,7 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       id-token: write
     steps:
       - uses: actions/checkout@v6
@@ -31,4 +31,33 @@ jobs:
           else
             echo "tag=latest" >> "$GITHUB_OUTPUT"
           fi
+          # Any SemVer pre-release identifier (the hyphen) marks a GitHub pre-release
+          if [[ "$VERSION" == *-* ]]; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
       - run: npm publish ./dist/grapesjs-angular --access public --provenance --tag ${{ steps.dist-tag.outputs.tag }}
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          PRERELEASE: ${{ steps.dist-tag.outputs.prerelease }}
+        run: |
+          VERSION="${TAG#v}"
+          # Pull this version's section out of CHANGELOG.md (Keep a Changelog format):
+          # everything between this "## [x.y.z]" heading and the next "## [" heading.
+          awk -v ver="$VERSION" '
+            $0 ~ "^## \\[" ver "\\]" { flag=1; next }
+            flag && /^## \[/ { exit }
+            flag { print }
+          ' CHANGELOG.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "No CHANGELOG entry for $VERSION — falling back to auto-generated notes."
+            FLAGS=(--generate-notes)
+          else
+            FLAGS=(--notes-file release-notes.md)
+          fi
+          [ "$PRERELEASE" = "true" ] && FLAGS+=(--prerelease)
+          gh release create "$TAG" --title "$TAG" --verify-tag "${FLAGS[@]}"
