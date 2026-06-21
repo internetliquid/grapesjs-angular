@@ -158,6 +158,18 @@ html[data-theme="dark"] {
   background-color: var(--accent) !important;
   border-color: var(--accent) !important;
 }
+/* default-mode device selector — its panel is 44px but the canvas starts at
+   40px (--gjs-canvas-top), so its bottom edge bled into the canvas. Pin the
+   panel to the bar height and center the dropdown within it. */
+.gjs-pn-devices-c {
+  display: flex;
+  align-items: center;
+  height: var(--gjs-canvas-top, 40px);
+  box-sizing: border-box;
+}
+.gjs-pn-devices-c .gjs-devices-c {
+  padding: 0 3px;
+}
 
 *, *::before, *::after {
   box-sizing: border-box;
