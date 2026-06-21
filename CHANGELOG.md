@@ -16,6 +16,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [2.0.0-beta.2] — 2026-06-21
 
+This release restructures the library to mirror [`@grapesjs/react`](https://github.com/GrapesJS/react), the official React wrapper. A new **custom-UI provider model** lets you compose the entire editor shell — sidebars, blocks, layers, style/trait panels — from Angular templates instead of GrapesJS's built-in panels, reaching feature parity with the React render-props API. **Contains breaking changes vs `2.0.0-beta.1`** (see _Changed_).
+
 ### Added
 
 - `<gjs-canvas>` mount-point component enabling custom UI mode — when projected into `<gjs-editor>`, swaps the editor's default container and disables default panels.

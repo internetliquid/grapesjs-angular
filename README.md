@@ -8,7 +8,7 @@
 
 An Angular wrapper for the [GrapesJS](https://grapesjs.com/) web builder framework. Embed a fully functional drag-and-drop page editor in your Angular app with all GrapesJS managers accessible as Angular signals.
 
-**[Live Demo →](https://internetliquid.github.io/grapesjs-angular/)**
+**[Live Demo →](https://internetliquid.github.io/grapesjs-angular/)**  ·  **[npm package →](https://www.npmjs.com/package/@ilq/grapesjs-angular)**
 
 ## Angular Version Support
 
@@ -20,8 +20,10 @@ An Angular wrapper for the [GrapesJS](https://grapesjs.com/) web builder framewo
 
 ## Installation
 
+> **Pre-release:** the newest build ships under the npm `beta` dist-tag. Install with `@beta` to get it — a plain `npm install` currently resolves to an older beta.
+
 ```bash
-npm install @ilq/grapesjs-angular grapesjs
+npm install @ilq/grapesjs-angular@beta grapesjs
 ```
 
 Add the GrapesJS CSS to your project:
